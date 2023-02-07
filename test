@@ -10,11 +10,16 @@ assert() {
 local ASV='./asv'
 local FS=$'\034'
 local GS=$'\035'
-local RS=$'\036'
+local RS=$'\0'
+local FS=$'\036'
 local US=$'\037'
-local NUL=$'\0'
 
-assert 'tokenize' "$($ASV tokenize <(echo 'a b\nc d'))" "$(echo "token\0a\0b\0c\0d\0")"
+
+TMP=$(mktemp)
+trap "rm $TMP" EXIT
+echo 'a b\nc d' > "$TMP"
+assert 'tokenize' "$($ASV tokenize $TMP)" "$(echo "token${RS}a${RS}b${RS}c${RS}d${RS}")"
+assert 'tokenize filenames' "$($ASV tokenize -f $TMP)" "$(echo "filename${FS}token${RS}$TMP${FS}a${RS}$TMP${FS}b${RS}$TMP${FS}c${RS}$TMP${FS}d${RS}")"
 
 [[ -z "$ERR" ]] && echo "All Tests Pass"
 exit "$ERR"

@@ -22,8 +22,11 @@ CMD="$1"
 [[ $# -ne 0 ]] && shift
 case "$CMD" in
     tokenize) #FILE [FILE...], Converts one or more files of whitespace-separated tokens into a token table.
+	zparseopts -A opts -E -D f
+	local FNAMES=${+opts[-f]} #Adds column representing filename in which token was found.
+	[[ "$FNAMES" -eq 1 ]] && echo -n "filename$FS"
 	echo -n "token$RS"
-	asvawk -v'RS=[[:space:]]' '{print $0}' "$@"
+	asvawk -vFNAMES="$FNAMES" -v'RS=[[:space:]]' '{printf("%s%s"ORS, FNAMES ? FILENAME OFS : "", $0)}' "$@"
 	;;
     --help|-h|help) #[SUBCOMMAND], Prints help text for SUBCOMMAND. If SUBCOMMAND omitted, prints list of subcommands.
 	    echo "grepping: $(realpath $0)"
