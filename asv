@@ -1,0 +1,37 @@
+#!/bin/zsh
+
+#TODO get -h printing global help by redirecting to script
+
+set -o errexit
+set -o pipefail
+if [[ "${TRACE-0}" == "1" ]]; then set -o xtrace; fi
+
+export LC_COLLATE="${LC_COLLATE:-C}" #Selects the locale for determining sort order of dimensions.
+
+local FS=$'\034'
+local GS=$'\035'
+local RS='\0'
+local FS=$'\036'
+local US=$'\037'
+
+asvawk() {
+    awk -v"OFS=$FS" -v"ORS=$RS" "$@"
+}
+
+CMD="$1"
+[[ $# -ne 0 ]] && shift
+case "$CMD" in
+    tokenize) #FILE [FILE...], Converts one or more files of whitespace-separated tokens into a token table.
+	echo -n "token$RS"
+	asvawk -v'RS=[[:space:]]' '{print $0}' "$@"
+	;;
+    --help|-h|help) #[SUBCOMMAND], Prints help text for SUBCOMMAND. If SUBCOMMAND omitted, prints list of subcommands.
+	    echo "grepping: $(realpath $0)"
+	    [[ $# -eq 0 ]] && echo 'deps - Automatic Makefile generation for data processing pipelines from command line history\nUsage: deps SUBCOMMAND [ARGUMENTS...]\nSubcommands:'
+	    grep -E -- "${1:-\\w+}\)\s#" "$functions_source[$0]" | sed -E -- "s/^[[:space:]]*([-|[:alpha:]]+)\)\s#([^,]*), (.*)/\1 \2 - \3/" | sed $((${+1}+1))',$ s/^[[:space:]]*/\t/'
+	    ;;
+    *)
+	"$0" help
+	[[ -z "$CMD" ]] || exit 1
+	;;
+esac

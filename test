@@ -1,0 +1,22 @@
+#!/bin/zsh
+
+assert() {
+       if [[ "$2" != "$3" ]]; then
+       	   echo "Failure: $1\n\tExpected: $3\n\tReceived: $2"
+	   ERR=1
+       fi
+}
+
+local ASV='./asv'
+local FS=$'\034'
+local GS=$'\035'
+local RS=$'\036'
+local US=$'\037'
+local NUL=$'\0'
+
+assert 'tokenize' "$($ASV tokenize <(echo 'a b\nc d'))" "$(echo "token\0a\0b\0c\0d\0")"
+
+[[ -z "$ERR" ]] && echo "All Tests Pass"
+exit "$ERR"
+
+
