@@ -9,6 +9,7 @@ if [[ "${TRACE-0}" == "1" ]]; then set -o xtrace; fi
 export LC_COLLATE="${LC_COLLATE:-C}" #Selects the locale for determining sort order of dimensions.
 
 local SOH=$'\001'
+local STX=$'\002'
 local FS=$'\034'
 local GS=$'\035'
 local RS='\0'
@@ -25,13 +26,16 @@ case "$CMD" in
     tokenize) #TOKENS [TOKENS...], Converts each whitespace-separated TOKENS file into a token table and concatenates them all.
 	zparseopts -A opts -E -D f
 	local FNAMES=${+opts[-f]} #Adds column representing filename in which token was found.
-	
+
+	echo -n "$SOH"
 	[[ "$FNAMES" -eq 1 ]] && echo -n "filename$FS"
 	echo -n "token$RS"
+	echo -n "$STX"
 	asvawk -vFNAMES="$FNAMES" -v'RS=[[:space:]]' '{printf("%s%s"ORS, FNAMES ? FILENAME OFS : "", $0)}' "$@"
 	;;
 
     tsv2asv) #TSV, Converts TSV into an asv table.
+	echo -n "$STX"
 	< "${1:-/dev/fd/0}" tr '\n\t' "${RS}${FS}"
 	;;
     
