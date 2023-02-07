@@ -20,9 +20,21 @@ asvawk() {
     awk -v"OFS=$FS" -v"ORS=$RS" "$@"
 }
 
+fieldjoin() {
+    local IFS="$FS"
+    echo -n "$*"
+}
+
 CMD="$1"
 [[ $# -ne 0 ]] && shift
 case "$CMD" in
+    header) #ASV HEADER..., Sets the headers for ASV to the list of HEADERS.
+	local INPUT="$1"
+	shift
+	echo -n "$SOH$(fieldjoin "$@")$RS"
+	sed -z "/^$SOH/ d" "${INPUT:--}"
+	;;
+
     tokenize) #TOKENS [TOKENS...], Converts each whitespace-separated TOKENS file into a token table and concatenates them all.
 	zparseopts -A opts -E -D f
 	local FNAMES=${+opts[-f]} #Adds column representing filename in which token was found.
@@ -38,11 +50,11 @@ case "$CMD" in
 	echo -n "$STX"
 	< "${1:-/dev/fd/0}" tr '\n\t' "${RS}${FS}"
 	;;
-    
+
     --help|-h|help) #[SUBCOMMAND], Prints help text for SUBCOMMAND. If SUBCOMMAND omitted, prints list of subcommands.
 	    echo "grepping: $(realpath $0)"
 	    [[ $# -eq 0 ]] && echo 'deps - Automatic Makefile generation for data processing pipelines from command line history\nUsage: deps SUBCOMMAND [ARGUMENTS...]\nSubcommands:'
-	    grep -E -- "${1:-\\w+}\)\s#" "$functions_source[$0]" | sed -E -- "s/^[[:space:]]*([-|[:alpha:]]+)\)\s#([^,]*), (.*)/\1 \2 - \3/" | sed $((${+1}+1))',$ s/^[[:space:]]*/\t/'
+	    grep -E -- "${1:-\\w+}\)\s#" "$0" | sed -E -- "s/^[[:space:]]*([-|[:alpha:]]+)\)\s#([^,]*), (.*)/\1 \2 - \3/" | sed $((${+1}+1))',$ s/^[[:space:]]*/\t/'
 	    ;;
     *)
 	"$0" help
