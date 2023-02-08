@@ -21,16 +21,15 @@ THEAD="a${FS}b${RS}"
 THEAD2="x${FS}y${RS}"
 TBODY="c${FS}d${RS}e${FS}f${RS}"
 
-assert 'header' "$($ASV header <(echo $THEAD$TBODY) x y)" "$(echo $THEAD2$TBODY)"
+assert 'header' "$($ASV header <(echo -n $THEAD$TBODY) x y)" "$(echo -n $THEAD2$TBODY)"
 
-#assert 'substitute all' "$($ASV substitute "c|d" "x\1x" <(echo $THEAD$TBODY))" "$(echo "$THEAD${STX}xcx${FS}xdx${RS}e${FS}f${RS}")"
+assert 'substitute all' "$($ASV substitute "(a|c|d)" 'x\1x' <(echo -n $THEAD$TBODY))" "$(echo -n "${THEAD}xcx${FS}xdx${RS}e${FS}f${RS}")"
 
 echo 'a b\nc d' > "$TMP"
-assert 'tokenize' "$($ASV tokenize $TMP)" "$(echo "token${RS}a${RS}b${RS}c${RS}d${RS}")"
-assert 'tokenize filenames' "$($ASV tokenize -f $TMP)" "$(echo "filename${FS}token${RS}$TMP${FS}a${RS}$TMP${FS}b${RS}$TMP${FS}c${RS}$TMP${FS}d${RS}")"
+assert 'tokenize' "$($ASV tokenize $TMP)" "$(echo -n "token${RS}a${RS}b${RS}c${RS}d${RS}")"
+assert 'tokenize filenames' "$($ASV tokenize -f $TMP)" "$(echo -n "filename${FS}token${RS}$TMP${FS}a${RS}$TMP${FS}b${RS}$TMP${FS}c${RS}$TMP${FS}d${RS}")"
 
-echo 'tsv'
-assert 'tsv2asv' "$($ASV tsv2asv <(echo "a\tb\nc\td\ne\tf"))" "$(echo "a${FS}b${RS}c${FS}d${RS}e${FS}f${RS}")"
+assert 'tsv2asv' "$($ASV tsv2asv <(echo "a\tb\nc\td\ne\tf"))" "$(echo -n "a${FS}b${RS}c${FS}d${RS}e${FS}f${RS}")"
 
 [[ -z "$ERR" ]] && echo "All Tests Pass"
 exit "$ERR"

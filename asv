@@ -20,14 +20,21 @@ asvawk() {
     awk -v"OFS=$FS" -v"ORS=$RS" -v"FS=$FS" -v"RS=$RS" "$@"
 }
 
-fieldjoin() {
-    local IFS="$FS"
-    echo -n "$*"
+rowawk() {
+    read -d$'\0' line
+    echo -n "$line$RS"
+    awk -v"OFS=$FS" -v"ORS=$RS" -v"FS=$FS" -v"RS=$RS" "$@"
 }
 
 echoheader() {
     local IFS="$FS"
     echo -n "$*$RS"
+}
+
+rows() {
+    read -d$'\0' line
+    echo -n "$line$RS"
+    "$@"
 }
 
 CMD="$1"
@@ -39,7 +46,7 @@ case "$CMD" in
 	;;
 
     substitute) #PATTERN SUBSTITUTION [ASV], Replaces regex PATTERN with SUBSTITUTION, which may use back references.
-	awk -v"OFS=$FS" -v"ORS=$RS" -v"FS=$FS" -v"RS=[$RS$SOH$STX]" -v"SOH=$SOH" -v"STX=$STX" "RT==SOH || RT==STX {printf(RT); next}"'{print}' "${3:--}"
+	< "${3:--}" rowawk -vrx="$1" -vs="${2//\\/\\\\}" '{for (i=1;i<=NF;i++) $i=gensub(rx,s,"g",$i); print}'
 	;;
     
     tokenize) #TOKENS [TOKENS...], Converts each whitespace-separated TOKENS file into a token table and concatenates them all.
