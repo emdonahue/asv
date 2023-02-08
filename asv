@@ -46,7 +46,7 @@ case "$CMD" in
 	;;
 
     substitute) #PATTERN SUBSTITUTION [ASV], Replaces regex PATTERN with SUBSTITUTION, which may use back references.
-	< "${3:--}" rowawk -vrx="$1" -vs="${2//\\/\\\\}" '{for (i=1;i<=NF;i++) $i=gensub(rx,s,"g",$i); print}'
+	< "${3:-/dev/fd/0}" rowawk -vrx="$1" -vs="${2//\\/\\\\}" '{for (i=1;i<=NF;i++) $i=gensub(rx,s,"g",$i); print}'
 	;;
     
     tokenize) #TOKENS [TOKENS...], Converts each whitespace-separated TOKENS file into a token table and concatenates them all.
