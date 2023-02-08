@@ -25,6 +25,8 @@ assert 'header' "$($ASV header <(echo -n $THEAD$TBODY) x y)" "$(echo -n $THEAD2$
 
 assert 'schema' "$($ASV schema <(echo -n $THEAD$TBODY))" "$(echo "id\tcolumn\n1\ta\n2\tb")"
 
+assert 'sort' "$($ASV sort <(echo -n ${THEAD2}e${FS}f${RS}c${FS}d${RS}))" "$(echo -n "$THEAD2$TBODY")"
+
 assert 'substitute all' "$($ASV substitute "(a|c|d)" 'x\1x' <(echo -n $THEAD$TBODY))" "$(echo -n "${THEAD}xcx${FS}xdx${RS}e${FS}f${RS}")"
 
 echo 'a b\nc d' > "$TMP"

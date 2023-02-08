@@ -50,6 +50,10 @@ case "$CMD" in
     schema) #ASV, Prints the table headers along with their indices for use in other commands.
 	{echo -n "id${FS}column$RS"; asvawk '{for (i=1;i<=NF;i++) print i,$i; exit}' "${1:--}"} | "$0" asv2tsv
 	;;
+
+    sort) #ASV [OPTIONS...], Runs unix sort on just the rows of ASV.
+	< "${1:-/dev/fd/0}" rows sort -zt"$FS" "${@:2}"
+	;;
     
     substitute) #PATTERN SUBSTITUTION [ASV], Replaces regex PATTERN with SUBSTITUTION, which may use back references.
 	< "${3:-/dev/fd/0}" rowawk -vrx="$1" -vs="${2//\\/\\\\}" '{for (i=1;i<=NF;i++) $i=gensub(rx,s,"g",$i); print}'
