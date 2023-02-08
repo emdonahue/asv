@@ -46,10 +46,8 @@ case "$CMD" in
 	zparseopts -A opts -E -D f
 	local FNAMES=${+opts[-f]} #Adds column representing filename in which token was found.
 
-	echo -n "$SOH"
 	[[ "$FNAMES" -eq 1 ]] && echo -n "filename$FS"
 	echo -n "token$RS"
-	echo -n "$STX"
 	awk -vFNAMES="$FNAMES" -v'RS=[[:space:]]' -v"OFS=$FS" -v"ORS=$RS" '{printf("%s%s"ORS, FNAMES ? FILENAME OFS : "", $0)}' "$@"
 	;;
 

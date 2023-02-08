@@ -8,8 +8,6 @@ assert() {
 }
 
 local ASV='./asv'
-local SOH=$'\001'
-local STX=$'\002'
 local FS=$'\034'
 local GS=$'\035'
 local RS=$'\0'
@@ -28,8 +26,8 @@ assert 'header' "$($ASV header <(echo $THEAD$TBODY) x y)" "$(echo $THEAD2$TBODY)
 #assert 'substitute all' "$($ASV substitute "c|d" "x\1x" <(echo $THEAD$TBODY))" "$(echo "$THEAD${STX}xcx${FS}xdx${RS}e${FS}f${RS}")"
 
 echo 'a b\nc d' > "$TMP"
-assert 'tokenize' "$($ASV tokenize $TMP)" "$(echo "${SOH}token${RS}${STX}a${RS}b${RS}c${RS}d${RS}")"
-assert 'tokenize filenames' "$($ASV tokenize -f $TMP)" "$(echo "${SOH}filename${FS}token${RS}${STX}$TMP${FS}a${RS}$TMP${FS}b${RS}$TMP${FS}c${RS}$TMP${FS}d${RS}")"
+assert 'tokenize' "$($ASV tokenize $TMP)" "$(echo "token${RS}a${RS}b${RS}c${RS}d${RS}")"
+assert 'tokenize filenames' "$($ASV tokenize -f $TMP)" "$(echo "filename${FS}token${RS}$TMP${FS}a${RS}$TMP${FS}b${RS}$TMP${FS}c${RS}$TMP${FS}d${RS}")"
 
 echo 'tsv'
 assert 'tsv2asv' "$($ASV tsv2asv <(echo "a\tb\nc\td\ne\tf"))" "$(echo "a${FS}b${RS}c${FS}d${RS}e${FS}f${RS}")"
