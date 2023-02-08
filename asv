@@ -1,6 +1,6 @@
 #!/bin/zsh
 
-#TODO get -h printing global help by redirecting to script
+#TODO add -f field selection to substitute
 
 set -o errexit
 set -o pipefail
@@ -20,21 +20,19 @@ asvawk() {
     awk -v"OFS=$FS" -v"ORS=$RS" -v"FS=$FS" -v"RS=$RS" "$@"
 }
 
-rowawk() {
+rows() {
     read -d$'\0' line
     echo -n "$line$RS"
-    awk -v"OFS=$FS" -v"ORS=$RS" -v"FS=$FS" -v"RS=$RS" "$@"
+    "$@"
+}
+
+rowawk() {    
+    rows asvawk "$@"
 }
 
 echoheader() {
     local IFS="$FS"
     echo -n "$*$RS"
-}
-
-rows() {
-    read -d$'\0' line
-    echo -n "$line$RS"
-    "$@"
 }
 
 CMD="$1"
