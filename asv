@@ -38,11 +38,19 @@ echoheader() {
 CMD="$1"
 [[ $# -ne 0 ]] && shift
 case "$CMD" in
+    asv2tsv) #ASV, Converts ASV into a tsv.
+	< "${1:-/dev/fd/0}" tr "$RS$FS" '\n\t'
+	;;
+    
     header) #ASV HEADER..., Sets the headers for ASV to the list of HEADERS.
 	echoheader "${@:2}"
 	tail -z -n+2 "${1:--}"
 	;;
 
+    schema) #ASV, Prints the table headers along with their indices for use in other commands.
+	{echo -n "id${FS}column$RS"; asvawk '{for (i=1;i<=NF;i++) print i,$i; exit}' "${1:--}"} | "$0" asv2tsv
+	;;
+    
     substitute) #PATTERN SUBSTITUTION [ASV], Replaces regex PATTERN with SUBSTITUTION, which may use back references.
 	< "${3:-/dev/fd/0}" rowawk -vrx="$1" -vs="${2//\\/\\\\}" '{for (i=1;i<=NF;i++) $i=gensub(rx,s,"g",$i); print}'
 	;;
