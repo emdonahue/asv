@@ -21,6 +21,8 @@ THEAD="a${FS}b${RS}"
 THEAD2="x${FS}y${RS}"
 TBODY="c${FS}d${RS}e${FS}f${RS}"
 
+assert 'head' "$($ASV head 1 <(echo -n $THEAD$TBODY))" "$(echo -n "${THEAD}c${FS}d${RS}")"
+
 assert 'header' "$($ASV header < <(echo -n $THEAD$TBODY) x y)" "$(echo -n $THEAD2$TBODY)"
 
 assert 'join' "$($ASV join <(echo -n $THEAD$TBODY) <(echo -n $THEAD2$TBODY))" "$(echo "a${FS}b${FS}y${RS}c${FS}d${FS}d${RS}e${FS}f${FS}f${RS}")"
