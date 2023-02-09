@@ -23,6 +23,8 @@ TBODY="c${FS}d${RS}e${FS}f${RS}"
 
 assert 'header' "$($ASV header < <(echo -n $THEAD$TBODY) x y)" "$(echo -n $THEAD2$TBODY)"
 
+assert 'join' "$($ASV join <(echo -n $THEAD$TBODY) <(echo -n $THEAD2$TBODY))" "$(echo "a${FS}b${FS}y${RS}c${FS}d${FS}d${RS}e${FS}f${FS}f${RS}")"
+
 assert 'schema' "$($ASV schema <(echo -n $THEAD$TBODY))" "$(echo "id\tcolumn\n1\ta\n2\tb")"
 
 assert 'sort' "$($ASV sort < <(echo -n ${THEAD2}e${FS}f${RS}c${FS}d${RS}))" "$(echo -n "$THEAD2$TBODY")"

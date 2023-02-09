@@ -47,11 +47,15 @@ case "$CMD" in
 	tail -z -n+2
 	;;
 
+    join) #[OPTION...] FILE1 FILE2, Runs unix join on the two files.
+	join -zt"$FS" --header "$@"
+	;;
+
     schema) #ASV, Prints the table headers along with their indices for use in other commands.
 	{echo -n "id${FS}column$RS"; asvawk '{for (i=1;i<=NF;i++) print i,$i; exit}' "${1:--}"} | "$0" asv2tsv
 	;;
 
-    sort) #[OPTIONS...], Runs unix sort on just the rows of the asv supplied on stdin.
+    sort) #[OPTION...], Runs unix sort on just the rows of the asv supplied on stdin.
 	rows sort -zt"$FS" "$@"
 	;;
     
