@@ -21,6 +21,8 @@ THEAD="a${FS}b${RS}"
 THEAD2="x${FS}y${RS}"
 TBODY="c${FS}d${RS}e${FS}f${RS}"
 
+assert 'check' "$($ASV check <(echo -n ${THEAD}c${RS}1${FS}f$RS) 2>&1)" "$(echo "Row 1 - Fields: 1, Expected: 2\nRow 2 Column 1 (a) - Type: strnum, Expected: string")" 
+
 assert 'head' "$($ASV head 1 <(echo -n $THEAD$TBODY))" "$(echo -n "${THEAD}c${FS}d${RS}")"
 
 assert 'header' "$($ASV header < <(echo -n $THEAD$TBODY) x y)" "$(echo -n $THEAD2$TBODY)"
