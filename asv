@@ -67,9 +67,11 @@ case "$CMD" in
 	;;
 
     select) #[OPTION]... REGEX [ASV], Selects rows in which a value matches REGEX.
-	zparseopts -A opts -E -D i
-	local IGNORECASE=${+opts[-i]} #Ignores case in matches
-	< "${2:-/dev/fd/0}" rowawk -vR="$1" -vI="$IGNORECASE" 'BEGIN {IGNORECASE=I} {for (i=1;i<=NF;i++) if (match($i,R)) {print; next}}'
+	zparseopts -A opts -E -D i v
+	local IGNORECASE=${+opts[-i]} #Ignores case
+	local INVERTMATCH=${+opts[-v]} #Inverts match
+	#print match($i,R),V,xor(match($i,R),V),xor(match($i,R),V) ? "print":"noprint"; 
+	< "${2:-/dev/fd/0}" rowawk -vR="$1" -vI="$IGNORECASE" -vV="$INVERTMATCH" 'BEGIN {IGNORECASE=I} {for (i=1;i<=NF;i++) if (match($i,R)) {if (V) next; print; next}; if (V) print}'
 	;;
 	   
     sort) #[OPTION]..., Runs unix sort on just the rows of the asv supplied on stdin.
