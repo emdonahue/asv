@@ -75,7 +75,7 @@ case "$CMD" in
 	local IGNORECASE=${+opts[-i]} #, Ignores case
 	local FIELD="${opts[-f]:-0}" #FIELD, Match only in field number FIELD.
 	local INVERTMATCH=${+opts[-v]} #, Inverts match
-	< "${2:-/dev/fd/0}" rowawk -vR="$1" -vI="$IGNORECASE" -vF="$FIELD" -vV="$INVERTMATCH" 'BEGIN {IGNORECASE=I}  {for (i=1;i<=NF && (!F || i==F);i++) if (match($i,R)) {if (V) next; print; next}; if (V) print}'
+	< "${2:-/dev/fd/0}" rowawk -vR="$1" -vI="$IGNORECASE" -vF="$FIELD" -vV="$INVERTMATCH" 'BEGIN {IGNORECASE=I}  {for (i=1;i<=NF;i++) {if (F && F!=i) continue; if (match($i,R)) {if (V) next; print; next}}; if (V) print}'
 	;;
 	   
     sort) #[OPTION]..., Runs unix sort on just the rows of the asv supplied on stdin.
