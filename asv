@@ -66,12 +66,20 @@ case "$CMD" in
 	{echo -n "id${FS}column$RS"; asvawk '{for (i=1;i<=NF;i++) print i,$i; exit}' "${1:--}"} | "$0" asv2tsv
 	;;
 
+    select) #[OPTION]... REGEX [ASV], Selects rows in which a value matches REGEX.
+	< "${2:-/dev/fd/0}" rowawk -vrx="$1" '{for (i=1;i<=NF;i++) if (match($i,rx)) {print; next}}'
+	;;
+	   
     sort) #[OPTION]..., Runs unix sort on just the rows of the asv supplied on stdin.
 	rows sort -zt"$FS" "$@"
 	;;
 
     update) #PATTERN REPLACEMENT [ASV], Replaces regex PATTERN with REPLACEMENT, which may use back references.
 	< "${3:-/dev/fd/0}" rowawk -vrx="$1" -vs="${2//\\/\\\\}" '{for (i=1;i<=NF;i++) $i=gensub(rx,s,"g",$i); print}'
+	;;
+
+    tail) #N [ASV], Prints the last N rows.
+	< "${2:-/dev/fd/0}" rows tail -zn"$1"
 	;;
     
     tokenize) #TOKENS [TOKENS...], Converts each whitespace-separated TOKENS file into a token table and concatenates them all.
@@ -80,7 +88,7 @@ case "$CMD" in
 
 	[[ "$FNAMES" -eq 1 ]] && echo -n "filename$FS"
 	echo -n "token$RS"
-	awk -vFNAMES="$FNAMES" -v'RS=[[:space:]]' -v"OFS=$FS" -v"ORS=$RS" '{printf("%s%s"ORS, FNAMES ? FILENAME OFS : "", $0)}' "$@"
+	awk -vFNAMES="$FNAMES" -v'RS=[[:space:][:cntrl:]]' -v"OFS=$FS" -v"ORS=$RS" '$0!="" {printf("%s%s"ORS, FNAMES ? FILENAME OFS : "", $0)}' "$@"
 	;;
 
     tsv2asv) #TSV [HEADER...], Converts TSV into an asv table using HEADERS as the columns. If no HEADERS are supplied, the first row of TSV is used as the header.
