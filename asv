@@ -62,6 +62,10 @@ case "$CMD" in
 	join -zt"$FS" --header "$@"
 	;;
 
+    rows) #COMMAND, Prints the header of the asv on stdin then executes an arbitrary unix COMMAND with the rows on stdin.
+	rows "$@"
+	;;
+
     schema) #ASV, Prints the table headers along with their indices for use in other commands.
 	{echo -n "id${FS}column$RS"; asvawk '{for (i=1;i<=NF;i++) print i,$i; exit}' "${1:--}"} | "$0" asv2tsv
 	;;
