@@ -86,6 +86,10 @@ case "$CMD" in
 	rows sort -zt"$FS" "$@"
 	;;
 
+    uniq) #[OPTION]... [ASV], Performs unix uniq on the asv.
+	uniq -z "$@"
+	;;
+    
     update) #PATTERN REPLACEMENT [ASV], Replaces regex PATTERN with REPLACEMENT, which may use back references.
 	< "${3:-/dev/fd/0}" rowawk -vR="$1" -vs="${2//\\/\\\\}" '{for (i=1;i<=NF;i++) $i=gensub(R,s,"g",$i); print}'
 	;;
