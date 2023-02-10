@@ -46,7 +46,7 @@ assert 'select field 2' "$($ASV select -f2 "c" <(echo -n ${THEAD}d${FS}c$RS$TROW
 
 assert 'sort' "$($ASV sort < <(echo -n $THEAD2$TROW2$TROW1))" "$(echo -n "$THEAD2$TBODY")"
 
-assert 'uniq' "$($ASV uniq <(echo -n $THEAD$TROW1$TROW1))" "$(echo -n "$THEAD$TROW1")"
+assert 'uniq' "$($ASV uniq < <(echo -n $THEAD$TROW1$TROW1))" "$(echo -n "$THEAD$TROW1")"
 
 assert 'update all columns' "$($ASV update "(a|c|d)" 'x\1x' <(echo -n $THEAD$TBODY))" "$(echo -n "${THEAD}xcx${FS}xdx${RS}$TROW2")"
 
