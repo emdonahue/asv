@@ -35,6 +35,7 @@ assert 'join' "$($ASV join <(echo -n $THEAD$TBODY) <(echo -n $THEAD2$TBODY))" "$
 assert 'schema' "$($ASV schema <(echo -n $THEAD$TBODY))" "$(echo "id\tcolumn\n1\ta\n2\tb")"
 
 assert 'select all columns' "$($ASV select "c" <(echo -n $THEAD$TBODY))" "$(echo -n "$THEAD$TROW1")"
+assert 'select ignore case' "$($ASV select -i "C" <(echo -n $THEAD$TBODY))" "$(echo -n "$THEAD$TROW1")"
 
 assert 'sort' "$($ASV sort < <(echo -n $THEAD2$TROW2$TROW1))" "$(echo -n "$THEAD2$TBODY")"
 

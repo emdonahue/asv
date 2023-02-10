@@ -67,7 +67,9 @@ case "$CMD" in
 	;;
 
     select) #[OPTION]... REGEX [ASV], Selects rows in which a value matches REGEX.
-	< "${2:-/dev/fd/0}" rowawk -vrx="$1" '{for (i=1;i<=NF;i++) if (match($i,rx)) {print; next}}'
+	zparseopts -A opts -E -D i
+	local IGNORECASE=${+opts[-i]} #Ignores case in matches
+	< "${2:-/dev/fd/0}" rowawk -vR="$1" -vI="$IGNORECASE" 'BEGIN {IGNORECASE=I} {for (i=1;i<=NF;i++) if (match($i,R)) {print; next}}'
 	;;
 	   
     sort) #[OPTION]..., Runs unix sort on just the rows of the asv supplied on stdin.
@@ -75,7 +77,7 @@ case "$CMD" in
 	;;
 
     update) #PATTERN REPLACEMENT [ASV], Replaces regex PATTERN with REPLACEMENT, which may use back references.
-	< "${3:-/dev/fd/0}" rowawk -vrx="$1" -vs="${2//\\/\\\\}" '{for (i=1;i<=NF;i++) $i=gensub(rx,s,"g",$i); print}'
+	< "${3:-/dev/fd/0}" rowawk -vR="$1" -vs="${2//\\/\\\\}" '{for (i=1;i<=NF;i++) $i=gensub(R,s,"g",$i); print}'
 	;;
 
     tail) #N [ASV], Prints the last N rows.
