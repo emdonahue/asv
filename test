@@ -26,6 +26,8 @@ TBODY="$TROW1$TROW2"
 assert 'check' "$($ASV check <(echo -n ${THEAD}c${RS}1${FS}f$RS) 2>&1)" "$(echo "Row 1 - Fields: 1, Expected: 2\nRow 2 Column 1 (a) - Type: strnum, Expected: string")"
 assert 'check no type' "$($ASV check -t <(echo -n ${THEAD}c${RS}1${FS}f$RS) 2>&1)" "$(echo "Row 1 - Fields: 1, Expected: 2")"
 
+assert 'count' "$($ASV count < <(echo -n $THEAD$TBODY))" "2"
+
 assert 'cut' "$($ASV cut -f1 < <(echo -n $THEAD$TBODY))" "$(echo -n "a${RS}c${RS}e${RS}")"
 
 assert 'head' "$($ASV head 1 <(echo -n $THEAD$TBODY))" "$(echo -n "$THEAD$TROW1")"

@@ -1,6 +1,7 @@
 #!/bin/zsh
 
 #TODO add -f field selection to substitute
+#TODO normalize all commands to take stdin or else manually parse flags to allow for uniform syntax
 
 set -o errexit
 set -o pipefail
@@ -49,6 +50,10 @@ case "$CMD" in
 	awk -v"T=$TYPE" -v"FS=$FS" -v"RS=$RS" 'NR==1 {split($0,names,FS); N=NF} 1<NR {if (N!=NF) {print "Row " (NR-1) " - Fields: " NF ", Expected: " N; e=1}; for (i=0;i<=NF;i++) {if ($i=="") {printf("Row %d Column %d (%s) is null\n",NR-1,i,names[i])} else {if (types[i]) {if (types[i]!=typeof($i) && !T) printf("Row %d Column %d (%s) - Type: %s, Expected: %s\n",NR-1,i,names[i],typeof($i),types[i])} else types[i]=typeof($i)}}} END {exit e}' "${1:--}" 1>&2
 	;;
 
+    count) #ASV, Counts the rows in ASV.
+	awk -v"FS=$FS" -v"RS=$RS" 'END {print NR-1}' "${1:--}"
+	;;
+    
     cut) #[OPTION]... [ASV], Performs unix cut on the asv.
 	cut -zd"$FS" "$@"
 	;;
