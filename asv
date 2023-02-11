@@ -44,7 +44,7 @@ case "$CMD" in
 
     check) #[ASV]; Checks the integrity of the ASV in terms of column count and datatype consistency and presence of nulls.
 	zparseopts -A opts -E -D t
-	local TYPE=${+opts[-t]} #Turns off type checking
+	local TYPE=${+opts[-t]} #; Turns off type checking
 	
 	awk -v"T=$TYPE" -v"FS=$FS" -v"RS=$RS" 'NR==1 {split($0,names,FS); N=NF} 1<NR {if (N!=NF) {print "Row " (NR-1) " - Fields: " NF ", Expected: " N; e=1}; for (i=0;i<=NF;i++) {if ($i=="") {printf("Row %d Column %d (%s) is null\n",NR-1,i,names[i])} else {if (types[i]) {if (types[i]!=typeof($i) && !T) printf("Row %d Column %d (%s) - Type: %s, Expected: %s\n",NR-1,i,names[i],typeof($i),types[i])} else types[i]=typeof($i)}}} END {exit e}' "${1:--}" 1>&2
 	;;
@@ -83,7 +83,7 @@ case "$CMD" in
 	{echo -n "id${FS}column$RS"; asvawk '{for (i=1;i<=NF;i++) print i,$i; exit}' "${1:--}"} | "$0" asv2tsv
 	;;
 
-    'select') #[OPTION]... REGEX [ASV]; Selects rows in which a value matches REGEX.
+    select) #[OPTION]... REGEX [ASV]; Selects rows in which a value matches REGEX.
 	zparseopts -A opts -E -D i v f:
 	local IGNORECASE=${+opts[-i]} #; Ignores case
 	local FIELD="${opts[-f]:-0}" #FIELD; Match only in field number FIELD.
@@ -113,7 +113,7 @@ case "$CMD" in
     
     tokenize) #TOKENS [TOKENS...]; Converts each whitespace-separated TOKENS file into a token table and concatenates them all.
 	zparseopts -A opts -E -D l
-	local FNAMES=${+opts[-l]} #Adds column representing filename in which token was found.
+	local FNAMES=${+opts[-l]} #; Adds column representing filename in which token was found.
 
 	[[ "$FNAMES" -eq 1 ]] && echo -n "filename$FS"
 	echo -n "token$RS"
@@ -127,10 +127,15 @@ case "$CMD" in
 
     --help|-h|help) #[SUBCOMMAND]; Prints help text for SUBCOMMAND. If SUBCOMMAND omitted, prints list of subcommands.
 	    [[ $# -eq 0 ]] && echo 'asv - ASCII-Separated Values\nTabular text data manipulation using ASCII control characters as table structure. \nUsage: asv SUBCOMMAND [ARGUMENTS...]\n\nSubcommands:'
-	    grep -E -- "${1:-\\w+}\)\s#" "$0" | sed -E -- "s/^[[:space:]]*([-|[:alnum:]]+)\)\s#([^;]*); (.*)/\1 \2 - \3/" | sed $((${+1}+1))',$ s/^[[:space:]]*/\t/'
+	    grep -E -- "${1:-\\w+}\)\s#" "$0" | sed -E -- "s/^[[:space:]]*([-|[:alnum:]]+)\)\s#([^;]*); (.*)/\1 \2\t\3/" | sed $((${+1}+1))',$ s/^[[:space:]]*/\t/'
+	    [[ $# -ne 0 ]] && sed -nE "/\s*$1\)\s#/,/^\s*$/ s/.*opts\[([-[:alnum:]]+)\].*#(.*); (.*)/\t\1 \2\t\3/p" "$0" 
 	    ;;
     *)
-	"$0" help
-	[[ -z "$CMD" ]] || exit 1
+	if [[ -z "$CMD" ]]; then
+	    "$0" help
+	else
+	    "$0" help 1>&2
+	    exit 1
+	fi
 	;;
 esac
