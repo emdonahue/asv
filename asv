@@ -17,7 +17,9 @@ local FS=$'\036'
 local US=$'\037'
 
 asvawk() {
-    awk -v"OFS=$FS" -v"ORS=$RS" -v"FS=$FS" -v"RS=$RS" "$@"
+    #1==NR {for (i=1;i<=NF;i++) { COLS[i]=i; COLS[$i]=i}}
+    #-f <(echo 'BEGIN {xxx=2}')
+    awk -v"OFS=$FS" -v"ORS=$RS" -v"FS=$FS" -v"RS=$RS" -f <(echo "${${@}[-1]}") -f <(echo '1==NR {for (i=1;i<=NF;i++) { COLS[i]=i; COLS[$i]=i}}') "${${@}[@]:0:-1}"
 }
 
 rows() {
@@ -40,6 +42,10 @@ CMD="$1"
 case "$CMD" in
     asv2tsv) #[ASV]; Converts ASV into a tsv.
 	< "${1:-/dev/fd/0}" tr "$RS$FS" '\n\t'
+	;;
+
+    awk) #[OPTION]...; Runs awk on the rows of the asv on stdin.
+	rowawk "$@"
 	;;
 
     check) #[ASV]; Checks the integrity of the ASV in terms of column count and datatype consistency and presence of nulls.
@@ -67,7 +73,7 @@ case "$CMD" in
 	;;
 
     group) #FIELD[,FIELD]... [ASV]; Creates an autoid column at position 1 by concatenating and sorting values from the comma-separated list of field numbers. Useful for aggregate functions and multi-column joins.
-	echo -n "autoid$FS"
+	echo -n "autoid$FS"	
 	< "${2:-/dev/fd/0}" rowawk '{printf($'"${1//,/\"\035\"$}"'"\036"); print}' | "$0" sort -k1,1
 	;;
     
@@ -80,7 +86,7 @@ case "$CMD" in
 	;;
 
     schema) #ASV; Prints the table headers along with their indices for use in other commands.
-	{echo -n "id${FS}column$RS"; asvawk '{for (i=1;i<=NF;i++) print i,$i; exit}' "${1:--}"} | "$0" asv2tsv
+	{echo -n "id${FS}column$RS"; asvawk '{for (i=1;i<=NF;i++) print i,$i; exit}' < "${1:-/dev/fd/0}"} | "$0" asv2tsv
 	;;
 
     select) #[OPTION]... REGEX [ASV]; Selects rows in which a value matches REGEX.

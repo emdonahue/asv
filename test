@@ -23,6 +23,8 @@ TROW1="c${FS}d${RS}"
 TROW2="e${FS}f${RS}"
 TBODY="$TROW1$TROW2"
 
+assert 'awk' "$($ASV awk < <(echo -n $THEAD$TBODY) "1")" "$(echo -n $THEAD$TBODY)"
+
 assert 'check' "$($ASV check <(echo -n ${THEAD}c${RS}1${FS}f$RS) 2>&1)" "$(echo "Row 1 - Fields: 1, Expected: 2\nRow 2 Column 1 (a) - Type: strnum, Expected: string")"
 assert 'check no type' "$($ASV check -t <(echo -n ${THEAD}c${RS}1${FS}f$RS) 2>&1)" "$(echo "Row 1 - Fields: 1, Expected: 2")"
 
