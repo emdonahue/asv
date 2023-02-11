@@ -38,96 +38,96 @@ echoheader() {
 CMD="$1"
 [[ $# -ne 0 ]] && shift
 case "$CMD" in
-    asv2tsv) #ASV, Converts ASV into a tsv.
+    asv2tsv) #[ASV]; Converts ASV into a tsv.
 	< "${1:-/dev/fd/0}" tr "$RS$FS" '\n\t'
 	;;
 
-    check) #[ASV], Checks the integrity of the ASV in terms of column count and datatype consistency and presence of nulls.
+    check) #[ASV]; Checks the integrity of the ASV in terms of column count and datatype consistency and presence of nulls.
 	zparseopts -A opts -E -D t
 	local TYPE=${+opts[-t]} #Turns off type checking
 	
 	awk -v"T=$TYPE" -v"FS=$FS" -v"RS=$RS" 'NR==1 {split($0,names,FS); N=NF} 1<NR {if (N!=NF) {print "Row " (NR-1) " - Fields: " NF ", Expected: " N; e=1}; for (i=0;i<=NF;i++) {if ($i=="") {printf("Row %d Column %d (%s) is null\n",NR-1,i,names[i])} else {if (types[i]) {if (types[i]!=typeof($i) && !T) printf("Row %d Column %d (%s) - Type: %s, Expected: %s\n",NR-1,i,names[i],typeof($i),types[i])} else types[i]=typeof($i)}}} END {exit e}' "${1:--}" 1>&2
 	;;
 
-    count) #FIELD[,FIELD]... [ASV], Aggregates and counts the rows grouped by FIELD ids.
+    count) #FIELD[,FIELD]... [ASV]; Aggregates and counts the rows grouped by FIELD ids.
 	"$0" group "$@" | "$0" cut -f1 | "$0" uniq -c | rowawk -vFS='[[:space:]]+' '{print $3,$2}' | "$0" header group count
 	;;
     
-    cut) #[OPTION]... [ASV], Performs unix cut on the asv.
+    cut) #[OPTION]... [ASV]; Performs unix cut on the asv.
 	cut -zd"$FS" "$@"
 	;;
 
-    head) #N [ASV], Prints the first N rows.
+    head) #N [ASV]; Prints the first N rows.
 	< "${2:-/dev/fd/0}" rows head -zn"$1"
 	;;
     
-    header) #HEADER..., Sets the headers for the asv supplied on stdin to the list of HEADERS.
+    header) #HEADER...; Sets the headers for the asv supplied on stdin to the list of HEADERS.
 	echoheader "$@"
 	tail -z -n+2
 	;;
 
-    group) #FIELD[,FIELD]... [ASV], Creates an autoid column at position 1 by concatenating and sorting values from the comma-separated list of field numbers. Useful for aggregate functions and multi-column joins.
+    group) #FIELD[,FIELD]... [ASV]; Creates an autoid column at position 1 by concatenating and sorting values from the comma-separated list of field numbers. Useful for aggregate functions and multi-column joins.
 	echo -n "autoid$FS"
 	< "${2:-/dev/fd/0}" rowawk '{printf($'"${1//,/\"\035\"$}"'"\036"); print}' | "$0" sort -k1,1
 	;;
     
-    join) #[OPTION]... FILE1 FILE2, Runs unix join on the two files.
+    join) #[OPTION]... FILE1 FILE2; Runs unix join on the two files.
 	join -zt"$FS" --header "$@"
 	;;
 
-    rows) #COMMAND, Prints the header of the asv on stdin then executes an arbitrary unix COMMAND with the rows on stdin.
+    rows) #COMMAND; Prints the header of the asv on stdin then executes an arbitrary unix COMMAND with the rows on stdin.
 	rows "$@"
 	;;
 
-    schema) #ASV, Prints the table headers along with their indices for use in other commands.
+    schema) #ASV; Prints the table headers along with their indices for use in other commands.
 	{echo -n "id${FS}column$RS"; asvawk '{for (i=1;i<=NF;i++) print i,$i; exit}' "${1:--}"} | "$0" asv2tsv
 	;;
 
-    'select') #[OPTION]... REGEX [ASV], Selects rows in which a value matches REGEX.
+    'select') #[OPTION]... REGEX [ASV]; Selects rows in which a value matches REGEX.
 	zparseopts -A opts -E -D i v f:
-	local IGNORECASE=${+opts[-i]} #, Ignores case
-	local FIELD="${opts[-f]:-0}" #FIELD, Match only in field number FIELD.
-	local INVERTMATCH=${+opts[-v]} #, Inverts match
+	local IGNORECASE=${+opts[-i]} #; Ignores case
+	local FIELD="${opts[-f]:-0}" #FIELD; Match only in field number FIELD.
+	local INVERTMATCH=${+opts[-v]} #; Inverts match
 	< "${2:-/dev/fd/0}" rowawk -vR="$1" -vI="$IGNORECASE" -vF="$FIELD" -vV="$INVERTMATCH" 'BEGIN {IGNORECASE=I}  {for (i=1;i<=NF;i++) {if (F && F!=i) continue; if (match($i,R)) {if (V) next; print; next}}; if (V) print}'
 	;;
 
-    size) #ASV, Counts the rows in ASV.
+    size) #ASV; Counts the rows in ASV.
 	awk -v"FS=$FS" -v"RS=$RS" 'END {print NR-1}' "${1:--}"
 	;;
     
-    sort) #[OPTION]..., Runs unix sort on just the rows of the asv supplied on stdin.
+    sort) #[OPTION]...; Runs unix sort on just the rows of the asv supplied on stdin.
 	rows sort -zt"$FS" "$@"
 	;;
 
-    uniq) #[OPTION]... [ASV], Performs unix uniq on the asv on stdin.
+    uniq) #[OPTION]... [ASV]; Performs unix uniq on the asv on stdin.
 	rows uniq -z "$@"
 	;;
     
-    update) #PATTERN REPLACEMENT [ASV], Replaces regex PATTERN with REPLACEMENT, which may use back references.
+    update) #PATTERN REPLACEMENT [ASV]; Replaces regex PATTERN with REPLACEMENT, which may use back references.
 	< "${3:-/dev/fd/0}" rowawk -vR="$1" -vs="${2//\\/\\\\}" '{for (i=1;i<=NF;i++) $i=gensub(R,s,"g",$i); print}'
 	;;
 
-    tail) #N [ASV], Prints the last N rows.
+    tail) #N [ASV]; Prints the last N rows.
 	< "${2:-/dev/fd/0}" rows tail -zn"$1"
 	;;
     
-    tokenize) #TOKENS [TOKENS...], Converts each whitespace-separated TOKENS file into a token table and concatenates them all.
+    tokenize) #TOKENS [TOKENS...]; Converts each whitespace-separated TOKENS file into a token table and concatenates them all.
 	zparseopts -A opts -E -D l
 	local FNAMES=${+opts[-l]} #Adds column representing filename in which token was found.
 
 	[[ "$FNAMES" -eq 1 ]] && echo -n "filename$FS"
 	echo -n "token$RS"
-	awk -vFNAMES="$FNAMES" -v'RS=[[:space:][:cntrl:]]' -v"OFS=$FS" -v"ORS=$RS" '$0!="" {printf("%s%s"ORS, FNAMES ? FILENAME OFS : "", $0)}' "$@"
+	awk -vFNAMES="$FNAMES" -v'RS=[[:space:][:cntrl:]]+' -v"OFS=$FS" -v"ORS=$RS" '$0!="" {printf("%s%s"ORS, FNAMES ? FILENAME OFS : "", $0)}' "$@"
 	;;
 
-    tsv2asv) #TSV [HEADER...], Converts TSV into an asv table using HEADERS as the columns. If no HEADERS are supplied, the first row of TSV is used as the header.
-	[[ $# -gt 1 ]] && echoheader "${@:2}"
-	< "${1:-/dev/fd/0}" tr '\n\t' "$RS$FS"
+    tsv2asv) #[HEADER...]; Converts TSV on stdin into an asv table using HEADERS as the columns. If no HEADERS are supplied, the first row of TSV is used as the header.
+	[[ $# -ne 0 ]] && echoheader "$@"
+	tr '\n\t' "$RS$FS"
 	;;
 
-    --help|-h|help) #[SUBCOMMAND], Prints help text for SUBCOMMAND. If SUBCOMMAND omitted, prints list of subcommands.
-	    [[ $# -eq 0 ]] && echo 'deps - Automatic Makefile generation for data processing pipelines from command line history\nUsage: deps SUBCOMMAND [ARGUMENTS...]\nSubcommands:'
-	    grep -E -- "${1:-\\w+}\)\s#" "$0" | sed -E -- "s/^[[:space:]]*([-|[:alpha:]]+)\)\s#([^,]*), (.*)/\1 \2 - \3/" | sed $((${+1}+1))',$ s/^[[:space:]]*/\t/'
+    --help|-h|help) #[SUBCOMMAND]; Prints help text for SUBCOMMAND. If SUBCOMMAND omitted, prints list of subcommands.
+	    [[ $# -eq 0 ]] && echo 'asv - ASCII-Separated Values\nTabular text data manipulation using ASCII control characters as table structure. \nUsage: asv SUBCOMMAND [ARGUMENTS...]\n\nSubcommands:'
+	    grep -E -- "${1:-\\w+}\)\s#" "$0" | sed -E -- "s/^[[:space:]]*([-|[:alnum:]]+)\)\s#([^;]*); (.*)/\1 \2 - \3/" | sed $((${+1}+1))',$ s/^[[:space:]]*/\t/'
 	    ;;
     *)
 	"$0" help
