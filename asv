@@ -16,10 +16,11 @@ local RS='\0'
 local FS=$'\036'
 local US=$'\037'
 
+#Accepts program as last argument and input file on stdin
 asvawk() {
     #1==NR {for (i=1;i<=NF;i++) { COLS[i]=i; COLS[$i]=i}}
     #-f <(echo 'BEGIN {xxx=2}')
-    awk -v"OFS=$FS" -v"ORS=$RS" -v"FS=$FS" -v"RS=$RS" -f <(echo "${${@}[-1]}") -f <(echo '1==NR {for (i=1;i<=NF;i++) { COLS[i]=i; COLS[$i]=i}}') "${${@}[@]:0:-1}"
+    awk -v"OFS=$FS" -v"ORS=$RS" -v"FS=$FS" -v"RS=$RS" -f <(echo '1==NR {for (i=1;i<=NF;i++) { COLS[i]=i; COLS[$i]=i}}') -f <(echo "${${@}[-1]}") "${${@}[@]:0:-1}"
 }
 
 rows() {
@@ -59,8 +60,8 @@ case "$CMD" in
 	"$0" group "$@" | "$0" cut -f1 | "$0" uniq -c | rowawk -vFS='[[:space:]]+' '{print $3,$2}' | "$0" header group count
 	;;
     
-    cut) #[OPTION]... [ASV]; Performs unix cut on the asv.
-	cut -zd"$FS" "$@"
+    cut) #FIELD[,FIELD]... [OPTION]...; Acts like unix cut on the asv using field names or ids.
+	asvawk '{print $(COLS['"${1//,/]),(COLS[}"'])}'
 	;;
 
     head) #N [ASV]; Prints the first N rows.
