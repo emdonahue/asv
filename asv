@@ -49,8 +49,8 @@ case "$CMD" in
 	awk -v"T=$TYPE" -v"FS=$FS" -v"RS=$RS" 'NR==1 {split($0,names,FS); N=NF} 1<NR {if (N!=NF) {print "Row " (NR-1) " - Fields: " NF ", Expected: " N; e=1}; for (i=0;i<=NF;i++) {if ($i=="") {printf("Row %d Column %d (%s) is null\n",NR-1,i,names[i])} else {if (types[i]) {if (types[i]!=typeof($i) && !T) printf("Row %d Column %d (%s) - Type: %s, Expected: %s\n",NR-1,i,names[i],typeof($i),types[i])} else types[i]=typeof($i)}}} END {exit e}' "${1:--}" 1>&2
 	;;
 
-    count) #[ASV], Aggregates and counts the rows in each group.
-	
+    count) #FIELD[,FIELD]... [ASV], Aggregates and counts the rows grouped by FIELD ids.
+	"$0" group "$@" | "$0" cut -f1 | "$0" uniq -c | rowawk -vFS='[[:space:]]+' '{print $3,$2}' | "$0" header group count
 	;;
     
     cut) #[OPTION]... [ASV], Performs unix cut on the asv.
@@ -66,8 +66,7 @@ case "$CMD" in
 	tail -z -n+2
 	;;
 
-    group) #FIELD[,FIELD]... [ASV], Creates an autoid column at position 1 by concatenating and sorting values from the comma-separated list of field numbers. Useful for aggregate functions.
-	#echo "${1//,/\\035$}" 1>&2
+    group) #FIELD[,FIELD]... [ASV], Creates an autoid column at position 1 by concatenating and sorting values from the comma-separated list of field numbers. Useful for aggregate functions and multi-column joins.
 	echo -n "autoid$FS"
 	< "${2:-/dev/fd/0}" rowawk '{printf($'"${1//,/\"\035\"$}"'"\036"); print}' | "$0" sort -k1,1
 	;;
