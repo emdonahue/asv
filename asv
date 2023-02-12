@@ -57,7 +57,7 @@ case "$CMD" in
 	;;
 
     count) #FIELD[,FIELD]... [ASV]; Aggregates and counts the rows grouped by FIELD ids.
-	"$0" group "$@" | "$0" cut -f1 | "$0" uniq -c | rowawk -vFS='[[:space:]]+' '{print $3,$2}' | "$0" header group count
+	"$0" group "$@" | "$0" cut -f1 | "$0" uniq -c | asvawk -vFS='[[:space:]]+' '1==NR {print $1,"count"} 1<NR {print $3,$2}'
 	;;
     
     cut) #[OPTION]...; Acts like unix cut on the asv using field names or ids.
@@ -73,9 +73,8 @@ case "$CMD" in
 	tail -z -n+2
 	;;
 
-    group) #FIELD[,FIELD]... [ASV]; Creates an autoid column at position 1 by concatenating and sorting values from the comma-separated list of field numbers. Useful for aggregate functions and multi-column joins.
-	echo -n "autoid$FS"	
-	< "${2:-/dev/fd/0}" rowawk '{printf($'"${1//,/\"\035\"$}"'"\036"); print}' | "$0" sort -k1,1
+    group) #FIELD[,FIELD]... [ASV]; Creates an grouped column at position 1 by concatenating and sorting values from the comma-separated list of fields. The fields are then removed from the table until it is unjoined. Useful for aggregate functions and multi-column joins.
+	< "${2:-/dev/fd/0}" asvawk '{$(NF+1)=$'"${1//,/\"\035\"$}"'; print}' | "$0" project -v "$1" | asvawk '{for (i=NF;1<=i;i--) {$(i+1)=$i}; $1=$NF; NF--; print}' | "$0" sort -k1,1
 	;;
     
     join) #[OPTION]... FILE1 FILE2; Runs unix join on the two files.
@@ -85,7 +84,7 @@ case "$CMD" in
     project) #[OPTIONS]... FIELD[,FIELD]...; Similar to cut, but limited to comma syntax and allows column rearrangement and column names in addition to indices.
 	zparseopts -A opts -E -D v
 	local INVERT=${+opts[-v]} #; Inverts projection. Equivalent to unix cut --complement
-	asvawk -vFIELDS="$1" -vV="$INVERT" '1==NR {split(FIELDS,FIDS,","); for (i in FIDS) {FIDS[i]=COLS[FIDS[i]]}; if (V) {for (i in FIDS) {inv[FIDS[i]]=FIDS[i]}; delete FIDS; for (i=1;i<=NF;i++) {if (! (i in inv)) {FIDS[i]=i}}}} {for (i in FIDS) {printf("%s%s",$(FIDS[i]),i==length(FIDS)?RS:FS)}}'
+	asvawk -vFIELDS="$1" -vV="$INVERT" '1==NR {split(FIELDS,FIDS,","); for (i in FIDS) {FIDS[i]=COLS[FIDS[i]]}; if (V) {for (i in FIDS) {inv[FIDS[i]]=FIDS[i]}; delete FIDS; for (i=1;i<=NF;i++) {if (!(i in inv)) {FIDS[length(FIDS)+1]=i}}}} {for (i in FIDS) {printf("%s%s",$(FIDS[i]),i==length(FIDS)?RS:FS)}}'
 	;;
 	
     rows) #COMMAND; Prints the header of the asv on stdin then executes an arbitrary unix COMMAND with the rows on stdin.
