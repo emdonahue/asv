@@ -60,8 +60,8 @@ case "$CMD" in
 	"$0" group "$@" | "$0" cut -f1 | "$0" uniq -c | rowawk -vFS='[[:space:]]+' '{print $3,$2}' | "$0" header group count
 	;;
     
-    cut) #FIELD[,FIELD]... [OPTION]...; Acts like unix cut on the asv using field names or ids.
-	asvawk '{print $(COLS['"${1//,/]),(COLS[}"'])}'
+    cut) #[OPTION]...; Acts like unix cut on the asv using field names or ids.
+	cut -zd"$FS" "$@"
 	;;
 
     head) #N [ASV]; Prints the first N rows.
@@ -82,6 +82,12 @@ case "$CMD" in
 	join -zt"$FS" --header "$@"
 	;;
 
+    project) #[OPTIONS]... FIELD[,FIELD]...; Similar to cut, but limited to comma syntax and allows column rearrangement and column names in addition to indices.
+	zparseopts -A opts -E -D v
+	local INVERT=${+opts[-v]} #; Inverts projection. Equivalent to unix cut --complement
+	asvawk -vFIELDS="$1" -vV="$INVERT" '1==NR {split(FIELDS,FIDS,","); for (i in FIDS) {FIDS[i]=COLS[FIDS[i]]}; if (V) {for (i in FIDS) {inv[FIDS[i]]=FIDS[i]}; delete FIDS; for (i=1;i<=NF;i++) {if (! (i in inv)) {FIDS[i]=i}}}} {for (i in FIDS) {printf("%s%s",$(FIDS[i]),i==length(FIDS)?RS:FS)}}'
+	;;
+	
     rows) #COMMAND; Prints the header of the asv on stdin then executes an arbitrary unix COMMAND with the rows on stdin.
 	rows "$@"
 	;;
@@ -135,7 +141,7 @@ case "$CMD" in
     --help|-h|help) #[SUBCOMMAND]; Prints help text for SUBCOMMAND. If SUBCOMMAND omitted, prints list of subcommands.
 	    [[ $# -eq 0 ]] && echo 'asv - ASCII-Separated Values\nTabular text data manipulation using ASCII control characters as table structure. \nUsage: asv SUBCOMMAND [ARGUMENTS...]\n\nSubcommands:'
 	    grep -E -- "${1:-\\w+}\)\s#" "$0" | sed -E -- "s/^[[:space:]]*([-|[:alnum:]]+)\)\s#([^;]*); (.*)/\1 \2\t\3/" | sed $((${+1}+1))',$ s/^[[:space:]]*/\t/'
-	    [[ $# -ne 0 ]] && sed -nE "/\s*$1\)\s#/,/^\s*$/ s/.*opts\[([-[:alnum:]]+)\].*#(.*); (.*)/\t\1 \2\t\3/p" "$0" 
+	    [[ $# -ne 0 ]] && sed -nE "/\s*$1\)\s#/,/^\s*;;\s*$/ s/.*opts\[([-[:alnum:]]+)\].*#(.*); (.*)/\t\1 \2\t\3/p" "$0" 
 	    ;;
     *)
 	if [[ -z "$CMD" ]]; then

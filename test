@@ -32,7 +32,7 @@ assert 'size' "$($ASV size < <(echo -n $THEAD$TBODY))" "2"
 
 assert 'count' "$($ASV count 1 < <(echo -n $THEAD$TBODY$TROW1))" "$(echo -n "group${FS}count${RS}c${FS}2${RS}e${FS}1${RS}")"
 
-assert 'cut' "$($ASV cut 1 < <(echo -n $THEAD$TBODY))" "$(echo -n "a${RS}c${RS}e${RS}")"
+assert 'cut' "$($ASV cut -f1 < <(echo -n $THEAD$TBODY))" "$(echo -n "a${RS}c${RS}e${RS}")"
 
 assert 'group' "$($ASV group 1,2 <(echo -n $THEAD$TROW2$TROW1))" "$(echo -n "autoid$FS${THEAD}c${GS}d$FS${TROW1}e${GS}f$FS$TROW2")"
 
@@ -41,6 +41,11 @@ assert 'head' "$($ASV head 1 <(echo -n $THEAD$TBODY))" "$(echo -n "$THEAD$TROW1"
 assert 'header' "$($ASV header < <(echo -n $THEAD$TBODY) x y)" "$(echo -n $THEAD2$TBODY)"
 
 assert 'join' "$($ASV join <(echo -n $THEAD$TBODY) <(echo -n $THEAD2$TBODY))" "$(echo "a${FS}b${FS}y${RS}c${FS}d${FS}d${RS}e${FS}f${FS}f${RS}")"
+
+assert 'project' "$($ASV project 1 < <(echo -n $THEAD$TBODY))" "$(echo -n "a${RS}c${RS}e${RS}")"
+assert 'project names' "$($ASV project a < <(echo -n $THEAD$TBODY))" "$(echo -n "a${RS}c${RS}e${RS}")"
+assert 'project multiple' "$($ASV project b,a < <(echo -n $THEAD$TBODY))" "$(echo -n "b${FS}a${RS}d${FS}c${RS}f${FS}e${RS}")"
+assert 'project inverted' "$($ASV project -v 2 < <(echo -n $THEAD$TBODY))" "$(echo -n "a${RS}c${RS}e${RS}")"
 
 assert 'rows' "$($ASV rows grep -zi "C" < <(echo -n $THEAD$TBODY))" "$(echo -n "$THEAD$TROW1")"
 
