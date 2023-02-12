@@ -22,55 +22,58 @@ THEAD2="x${FS}y${RS}"
 TROW1="c${FS}d${RS}"
 TROW2="e${FS}f${RS}"
 TBODY="$TROW1$TROW2"
+TABLE="$THEAD$TBODY"
 
-assert 'awk' "$($ASV awk < <(echo -n $THEAD$TBODY) "1")" "$(echo -n $THEAD$TBODY)"
+assert 'awk' "$($ASV awk < <(echo -n $TABLE) "1")" "$(echo -n $TABLE)"
 
 assert 'check' "$($ASV check <(echo -n ${THEAD}c${RS}1${FS}f$RS) 2>&1)" "$(echo "Row 1 - Fields: 1, Expected: 2\nRow 2 Column 1 (a) - Type: strnum, Expected: string")"
 assert 'check no type' "$($ASV check -t <(echo -n ${THEAD}c${RS}1${FS}f$RS) 2>&1)" "$(echo "Row 1 - Fields: 1, Expected: 2")"
 
-assert 'size' "$($ASV size < <(echo -n $THEAD$TBODY))" "2"
+assert 'size' "$($ASV size < <(echo -n $TABLE))" "2"
 
-assert 'count' "$($ASV count 1 < <(echo -n $THEAD$TBODY$TROW1))" "$(echo -n "a${FS}count${RS}c${FS}2${RS}e${FS}1${RS}")"
+assert 'count' "$($ASV count 1 < <(echo -n $TABLE$TROW1))" "$(echo -n "a${FS}count${RS}c${FS}2${RS}e${FS}1${RS}")"
 
-assert 'cut' "$($ASV cut -f1 < <(echo -n $THEAD$TBODY))" "$(echo -n "a${RS}c${RS}e${RS}")"
+assert 'cut' "$($ASV cut -f1 < <(echo -n $TABLE))" "$(echo -n "a${RS}c${RS}e${RS}")"
 
 assert 'group' "$($ASV group 1,2 <(echo -n $THEAD$TROW2$TROW1))" "$(echo -n "a${GS}b${RS}c${GS}d${RS}e${GS}f$RS")"
 
-assert 'head' "$($ASV head 1 <(echo -n $THEAD$TBODY))" "$(echo -n "$THEAD$TROW1")"
+assert 'head' "$($ASV head 1 <(echo -n $TABLE))" "$(echo -n "$THEAD$TROW1")"
 
-assert 'header' "$($ASV header < <(echo -n $THEAD$TBODY) x y)" "$(echo -n $THEAD2$TBODY)"
+assert 'header' "$($ASV header < <(echo -n $TABLE) x y)" "$(echo -n $THEAD2$TBODY)"
 
-assert 'join' "$($ASV join <(echo -n $THEAD$TBODY) <(echo -n $THEAD2$TBODY))" "$(echo "a${FS}b${FS}y${RS}c${FS}d${FS}d${RS}e${FS}f${FS}f${RS}")"
+assert 'join' "$($ASV join <(echo -n $TABLE) <(echo -n $THEAD2$TBODY))" "$(echo "a${FS}b${FS}y${RS}c${FS}d${FS}d${RS}e${FS}f${FS}f${RS}")"
 
-assert 'project' "$($ASV project 1 < <(echo -n $THEAD$TBODY))" "$(echo -n "a${RS}c${RS}e${RS}")"
-assert 'project names' "$($ASV project a < <(echo -n $THEAD$TBODY))" "$(echo -n "a${RS}c${RS}e${RS}")"
-assert 'project multiple' "$($ASV project b,a < <(echo -n $THEAD$TBODY))" "$(echo -n "b${FS}a${RS}d${FS}c${RS}f${FS}e${RS}")"
-assert 'project inverted' "$($ASV project -v 2 < <(echo -n $THEAD$TBODY))" "$(echo -n "a${RS}c${RS}e${RS}")"
+assert 'project' "$($ASV project 1 < <(echo -n $TABLE))" "$(echo -n "a${RS}c${RS}e${RS}")"
+assert 'project names' "$($ASV project a < <(echo -n $TABLE))" "$(echo -n "a${RS}c${RS}e${RS}")"
+assert 'project multiple' "$($ASV project b,a < <(echo -n $TABLE))" "$(echo -n "b${FS}a${RS}d${FS}c${RS}f${FS}e${RS}")"
+assert 'project inverted' "$($ASV project -v 2 < <(echo -n $TABLE))" "$(echo -n "a${RS}c${RS}e${RS}")"
 
-assert 'rows' "$($ASV rows grep -zi "C" < <(echo -n $THEAD$TBODY))" "$(echo -n "$THEAD$TROW1")"
+assert 'rows' "$($ASV rows grep -zi "C" < <(echo -n $TABLE))" "$(echo -n "$THEAD$TROW1")"
 
-assert 'schema' "$($ASV schema <(echo -n $THEAD$TBODY))" "$(echo "id\tcolumn\n1\ta\n2\tb")"
+assert 'schema' "$($ASV schema <(echo -n $TABLE))" "$(echo "id\tcolumn\n1\ta\n2\tb")"
 
-assert 'select all columns' "$($ASV select "c" <(echo -n $THEAD$TBODY))" "$(echo -n "$THEAD$TROW1")"
-assert 'select ignore case' "$($ASV select -i "C" <(echo -n $THEAD$TBODY))" "$(echo -n "$THEAD$TROW1")"
-assert 'select invert match' "$($ASV select -v "f" <(echo -n $THEAD$TBODY))" "$(echo -n "$THEAD$TROW1")"
+assert 'select all columns' "$($ASV select "c" <(echo -n $TABLE))" "$(echo -n "$THEAD$TROW1")"
+assert 'select ignore case' "$($ASV select -i "C" <(echo -n $TABLE))" "$(echo -n "$THEAD$TROW1")"
+assert 'select invert match' "$($ASV select -v "f" <(echo -n $TABLE))" "$(echo -n "$THEAD$TROW1")"
 assert 'select field' "$($ASV select -f1 "c" <(echo -n $THEAD${TROW1}d${FS}c$RS))" "$(echo -n "$THEAD$TROW1")"
 assert 'select field 2' "$($ASV select -f2 "c" <(echo -n ${THEAD}d${FS}c$RS$TROW1))" "$(echo -n "${THEAD}d${FS}c$RS")"
 
 assert 'sort' "$($ASV sort < <(echo -n $THEAD2$TROW2$TROW1))" "$(echo -n "$THEAD2$TBODY")"
 
+assert 'ungroup' "$($ASV group 1,2 <(echo -n $TABLE) | $ASV ungroup)" "$(echo -n "$TABLE")"
+
 assert 'uniq' "$($ASV uniq < <(echo -n $THEAD$TROW1$TROW1))" "$(echo -n "$THEAD$TROW1")"
 
-assert 'update all columns' "$($ASV update "(a|c|d)" 'x\1x' <(echo -n $THEAD$TBODY))" "$(echo -n "${THEAD}xcx${FS}xdx${RS}$TROW2")"
+assert 'update all columns' "$($ASV update "(a|c|d)" 'x\1x' <(echo -n $TABLE))" "$(echo -n "${THEAD}xcx${FS}xdx${RS}$TROW2")"
 
-assert 'tail' "$($ASV tail 1 <(echo -n $THEAD$TBODY))" "$(echo -n "${THEAD}e${FS}f${RS}")"
+assert 'tail' "$($ASV tail 1 <(echo -n $TABLE))" "$(echo -n "${THEAD}e${FS}f${RS}")"
 
 echo 'a b\nc d' > "$TMP"
 assert 'tokenize' "$($ASV tokenize $TMP)" "$(echo -n "token${RS}a${RS}b${RS}c${RS}d${RS}")"
 assert 'tokenize filenames' "$($ASV tokenize -l $TMP)" "$(echo -n "filename${FS}token${RS}$TMP${FS}a${RS}$TMP${FS}b${RS}$TMP${FS}c${RS}$TMP${FS}d${RS}")"
 
-assert 'tsv2asv' "$($ASV tsv2asv < <(echo "a\tb\nc\td\ne\tf"))" "$(echo -n "$THEAD$TBODY")"
-assert 'tsv2asv with headers' "$($ASV tsv2asv < <(echo "c\td\ne\tf") a b)" "$(echo -n "$THEAD$TBODY")"
+assert 'tsv2asv' "$($ASV tsv2asv < <(echo "a\tb\nc\td\ne\tf"))" "$(echo -n "$TABLE")"
+assert 'tsv2asv with headers' "$($ASV tsv2asv < <(echo "c\td\ne\tf") a b)" "$(echo -n "$TABLE")"
 
 [[ -z "$ERR" ]] && echo "All Tests Pass"
 exit "$ERR"
