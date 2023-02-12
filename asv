@@ -81,6 +81,16 @@ case "$CMD" in
 	join -zt"$FS" --header "$@"
 	;;
 
+    less) #[ASV]; Lightly formats the table and pipes it to less for inspection.
+	<"${1:-/dev/fd/0}" "$0" asv2tsv | less -S
+	;;
+
+    plot) #; Plots the data using the first column as the domain and subsequent columns as the range of multiple lines.
+
+	echo '1 1 8\n2 2 29\n3 3 11' | gnuplot -p -e 'plot "-"'
+	
+	;;
+    
     project) #[OPTIONS]... FIELD[,FIELD]...; Similar to cut, but limited to comma syntax and allows column rearrangement and column names in addition to indices.
 	zparseopts -A opts -E -D v
 	local INVERT=${+opts[-v]} #; Inverts projection. Equivalent to unix cut --complement
