@@ -1,5 +1,7 @@
 #!/bin/zsh
 
+#TODO Throw error on invalid flags
+#TODO Convert flags to new help format
 #TODO Add -f field selection to update
 #TODO Normalize all commands to take stdin or else manually parse flags for unix tools and pass them through to allow for uniform syntax
 
@@ -7,7 +9,7 @@ set -o errexit
 set -o pipefail
 if [[ "${TRACE-0}" == "1" ]]; then set -o xtrace; fi
 
-export LC_COLLATE="${LC_COLLATE:-C}" #Selects the locale for determining sort order of dimensions.
+export LC_COLLATE=C #Selects the locale for determining sort order of dimensions.
 
 local SOH=$'\001'
 local STX=$'\002'
@@ -16,10 +18,7 @@ local RS='\0'
 local FS=$'\036'
 local US=$'\037'
 
-#Accepts program as last argument and input file on stdin
-asvawk() {
-    #1==NR {for (i=1;i<=NF;i++) { COLS[i]=i; COLS[$i]=i}}
-    #-f <(echo 'BEGIN {xxx=2}')
+asvawk() { #Accepts program as last argument and input file on stdin
     awk -v"OFS=$FS" -v"ORS=$RS" -v"FS=$FS" -v"RS=$RS" -f <(echo '1==NR {for (i=1;i<=NF;i++) { COLS[i]=i; COLS[$i]=i}}') -f <(echo "${${@}[-1]}") "${${@}[@]:0:-1}"
 }
 
@@ -37,7 +36,7 @@ rowawk() {
     rows asvawk "$@"
 }
 
-echoheader() {
+writeheader() {
     local IFS="$FS"
     echo -n "$*$RS"
 }
@@ -54,10 +53,9 @@ case "$CMD" in
 	;;
 
     check) #[ASV]; Checks the integrity of the ASV in terms of column count and datatype consistency and presence of nulls.
-	zparseopts -A opts -E -D t
-	local TYPE=${+opts[-t]} #; Turns off type checking
+	zparseopts -F -D t=TYPE ${c#; Turns off type checking}
 	
-	awk -v"T=$TYPE" -v"FS=$FS" -v"RS=$RS" 'NR==1 {split($0,names,FS); N=NF} 1<NR {if (N!=NF) {print "Row " (NR-1) " - Fields: " NF ", Expected: " N; e=1}; for (i=0;i<=NF;i++) {if ($i=="") {printf("Row %d Column %d (%s) is null\n",NR-1,i,names[i])} else {if (types[i]) {if (types[i]!=typeof($i) && !T) printf("Row %d Column %d (%s) - Type: %s, Expected: %s\n",NR-1,i,names[i],typeof($i),types[i])} else types[i]=typeof($i)}}} END {exit e}' "${1:--}" 1>&2
+	awk -v"T=${#TYPE}" -v"FS=$FS" -v"RS=$RS" 'NR==1 {split($0,names,FS); N=NF} 1<NR {if (N!=NF) {print "Row " (NR-1) " - Fields: " NF ", Expected: " N; e=1}; for (i=0;i<=NF;i++) {if ($i=="") {printf("Row %d Column %d (%s) is null\n",NR-1,i,names[i])} else {if (types[i]) {if (types[i]!=typeof($i) && !T) printf("Row %d Column %d (%s) - Type: %s, Expected: %s\n",NR-1,i,names[i],typeof($i),types[i])} else types[i]=typeof($i)}}} END {exit e}' "${1:--}" 1>&2
 	;;
 
     count) #FIELD[,FIELD]... [ASV]; Aggregates and counts the rows grouped by FIELD ids.
@@ -73,13 +71,13 @@ case "$CMD" in
 	;;
     
     header) #HEADER...; Sets the headers for the asv supplied on stdin to the list of HEADERS.
-	echoheader "$@"
+	writeheader "$@"
 	tail -z -n+2
 	;;
 
     --help|-h|help) #[SUBCOMMAND]; Prints help text for SUBCOMMAND. If SUBCOMMAND omitted, prints list of subcommands.
 	[[ $# -eq 0 ]] && echo 'asv - ASCII-Separated Values\nTabular text data manipulation using ASCII control characters as table structure. \nUsage: asv SUBCOMMAND [ARGUMENTS...]\n\nSubcommands:'
-	    sed -nE '/\s*'"$1"'\)\s#/'"${1:+,/^\s*;;\s*$/}"'{s/^[[:space:]]*([-|[:alnum:]]+)\)\s#([^;]*); (.*)/'"${${1-\t}#$1}"'\1 \2\t\3/p; s/.*(\w+)=\w+ \$\{c#(.*); (.*)\}.*/\t-\1 \2\t\3/p}' "$0"
+	    sed -nE '/\s*'"$1"'\)\s#/'"${1:+,/^\s*;;\s*$/}"'{s/^[[:space:]]*([-|[:alnum:]]+)\)\s#([^;]*); (.*)/'"${${1-\t}:#$1}"'\1 \2\t\3/p; s/.*(\w+)=\w+ \$\{c#(.*); (.*)\}.*/\t-\1 \2\t\3/p}' "$0"
 	;;
 
     group) #FIELD[,FIELD]... [ASV]; Creates an grouped column at position 1 by concatenating and sorting values from the comma-separated list of fields. The fields are then removed from the table until it is unjoined. Useful for aggregate functions and multi-column joins.
@@ -95,7 +93,7 @@ case "$CMD" in
 	;;
 
     plot) #[ASV]...; Plots the data with gnuplot.
-	zparseopts -E -D c=CATEGORICAL ${c#; Uses column 1 as the x domain instead of the row number.}\
+	zparseopts -F -D c=CATEGORICAL ${c#; Uses column 1 as the x domain instead of the row number.}\
 		   d=DOMAIN ${c#; Uses column 1 as the x domain instead of the row number.}
 		   
 	#local CATEGORICAL=${opts2[-c]} #; Uses column 1 (or 2 if -d is enabled) as categorical labels on the x axis.
@@ -119,9 +117,8 @@ case "$CMD" in
 	;;
     
     project) #[OPTIONS]... FIELD[,FIELD]...; Similar to cut, but limited to comma syntax and allows column rearrangement and column names in addition to indices.
-	zparseopts -A opts -E -D v
-	local INVERT=${+opts[-v]} #; Inverts projection. Equivalent to unix cut --complement
-	asvawk -vFIELDS="$1" -vV="$INVERT" '1==NR {split(FIELDS,FIDS,","); for (i in FIDS) {FIDS[i]=COLS[FIDS[i]]}; if (V) {for (i in FIDS) {inv[FIDS[i]]=FIDS[i]}; delete FIDS; for (i=1;i<=NF;i++) {if (!(i in inv)) {FIDS[length(FIDS)+1]=i}}}} {for (i in FIDS) {printf("%s%s",$(FIDS[i]),i==length(FIDS)?RS:FS)}}'
+	zparseopts -F -D v=INVERT ${c#; Inverts projection. Equivalent to unix cut --complement.}
+	asvawk -vFIELDS="$1" -vV="${#INVERT}" '1==NR {split(FIELDS,FIDS,","); for (i in FIDS) {FIDS[i]=COLS[FIDS[i]]}; if (V) {for (i in FIDS) {inv[FIDS[i]]=FIDS[i]}; delete FIDS; for (i=1;i<=NF;i++) {if (!(i in inv)) {FIDS[length(FIDS)+1]=i}}}} {for (i in FIDS) {printf("%s%s",$(FIDS[i]),i==length(FIDS)?RS:FS)}}'
 	;;
 	
     rows) #COMMAND; Prints the header of the asv on stdin then executes an arbitrary unix COMMAND with the rows on stdin.
@@ -174,7 +171,7 @@ case "$CMD" in
 	;;
 
     tsv2asv) #[HEADER...]; Converts TSV on stdin into an asv table using HEADERS as the columns. If no HEADERS are supplied, the first row of TSV is used as the header.
-	[[ $# -ne 0 ]] && echoheader "$@"
+	[[ $# -ne 0 ]] && writeheader "$@"
 	tr '\n\t' "$RS$FS"
 	;;
     
