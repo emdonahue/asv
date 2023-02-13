@@ -21,10 +21,11 @@ Subcommands:
 	cut [OPTION]...	Acts like unix cut on the asv using field names or ids.
 	head N [ASV]	Prints the first N rows.
 	header HEADER...	Sets the headers for the asv supplied on stdin to the list of HEADERS.
+	--help|-h|help [SUBCOMMAND]	Prints help text for SUBCOMMAND. If SUBCOMMAND omitted, prints list of subcommands.
 	group FIELD[,FIELD]... [ASV]	Creates an grouped column at position 1 by concatenating and sorting values from the comma-separated list of fields. The fields are then removed from the table until it is unjoined. Useful for aggregate functions and multi-column joins.
 	join [OPTION]... FILE1 FILE2	Runs unix join on the two files.
 	less [ASV]	Lightly formats the table and pipes it to less for inspection.
-	plot 	Plots the data using the first column as the domain and subsequent columns as the range of multiple lines.
+	plot [ASV]...	Plots the data with gnuplot.
 	project [OPTIONS]... FIELD[,FIELD]...	Similar to cut, but limited to comma syntax and allows column rearrangement and column names in addition to indices.
 	rows COMMAND	Prints the header of the asv on stdin then executes an arbitrary unix COMMAND with the rows on stdin.
 	schema ASV	Prints the table headers along with their indices for use in other commands.
@@ -37,4 +38,7 @@ Subcommands:
 	tail N [ASV]	Prints the last N rows.
 	tokenize TOKENS [TOKENS...]	Converts each whitespace-separated TOKENS file into a token table and concatenates them all.
 	tsv2asv [HEADER...]	Converts TSV on stdin into an asv table using HEADERS as the columns. If no HEADERS are supplied, the first row of TSV is used as the header.
-	--help|-h|help [SUBCOMMAND]	Prints help text for SUBCOMMAND. If SUBCOMMAND omitted, prints list of subcommands.
+```
+##TODO
+- Add -f field selection to update
+- Normalize all commands to take stdin or else manually parse flags for unix tools and pass them through to allow for uniform syntax
