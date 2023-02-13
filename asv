@@ -2,6 +2,7 @@
 
 #TODO add -f field selection to substitute
 #TODO normalize all commands to take stdin or else manually parse flags to allow for uniform syntax
+#TODO make makefile extract todos into todo section
 
 set -o errexit
 set -o pipefail
@@ -77,6 +78,19 @@ case "$CMD" in
 	tail -z -n+2
 	;;
 
+    --help|-h|help) #[SUBCOMMAND]; Prints help text for SUBCOMMAND. If SUBCOMMAND omitted, prints list of subcommands.
+	[[ $# -eq 0 ]] && echo 'asv - ASCII-Separated Values\nTabular text data manipulation using ASCII control characters as table structure. \nUsage: asv SUBCOMMAND [ARGUMENTS...]\n\nSubcommands:'
+	#d=DOMAIN ${c#; Uses column 1 as the x domain instead of the row number.} \
+	    #if unset=>tab, set=>null
+	    sed -nE '/\s*'"$1"'\)\s#/'"${1:+,/^\s*;;\s*$/}"'{s/^[[:space:]]*([-|[:alnum:]]+)\)\s#([^;]*); (.*)/'"${${1-\t}#$1}"'\1 \2\t\3/p; s/.*(\w+)=\w+ \$\{c#(.*); (.*)\}.*/\t-\1 \2\t\3/p}' "$0"
+	    # ${c#(.*)}.*
+	    #{ s/.*(\w+)=\w+ ${c#(.*)}.*/\1 - \2/p}
+	#echo "/\s*$1\)\s#/${1:+,/^\s*;;\s*$/} s/.*opts\[([-[:alnum:]]+)\].*#(.*); (.*)/\t\1 \2\t\3/p" "$0" 
+	    #grep -E -- "${1:-\\w+}\)\s#" "$0" | sed -E -- "s/^[[:space:]]*([-|[:alnum:]]+)\)\s#([^;]*); (.*)/\1 \2\t\3/" | sed
+	    #[[ $# -ne 0 ]] && sed -nE "/\s*$1\)\s#/,+1 s/.*opts\[([-[:alnum:]]+)\].*#(.*); (.*)/\t\1 \2\t\3/p" "$0" 
+	    #[[ $# -ne 0 ]] && sed -nE "/\s*$1\)\s#/,/^\s*;;\s*$/ s/.*opts\[([-[:alnum:]]+)\].*#(.*); (.*)/\t\1 \2\t\3/p" "$0" 
+	;;
+
     group) #FIELD[,FIELD]... [ASV]; Creates an grouped column at position 1 by concatenating and sorting values from the comma-separated list of fields. The fields are then removed from the table until it is unjoined. Useful for aggregate functions and multi-column joins.
 	< "${2:-/dev/fd/0}" asvawk '{$(NF+1)=$'"${1//,/\"\035\"$}"'; print}' | "$0" project -v "$1" | asvawk '{for (i=NF;1<=i;i--) {$(i+1)=$i}; $1=$NF; NF--; print}' | "$0" sort -k1,1
 	;;
@@ -90,18 +104,26 @@ case "$CMD" in
 	;;
 
     plot) #[ASV]...; Plots the data with gnuplot.
-	zparseopts -A opts -E -D d
-	local DOMAIN=${+opts[-d]} #; Turns off type checking
+	zparseopts -E -D c=CATEGORICAL ${c#; Uses column 1 as the x domain instead of the row number.}\
+		   d=DOMAIN ${c#; Uses column 1 as the x domain instead of the row number.}
+		   
+	#local CATEGORICAL=${opts2[-c]} #; Uses column 1 (or 2 if -d is enabled) as categorical labels on the x axis.
+	#local DOMAIN=${opts2[-d]} #; Uses column 1 as the x domain instead of the row number.
+	#echo "DOMAIN: ${#DOMAIN} ${DOMAIN:+1:}"
+	#echo "CATEGORICAL: ${#CATEGORICAL} ${CATEGORICAL:+1:}"
+
 	#set style data linespoints
 	#set key autotitle columnheader
 	#-d[column] uses this column as domain. default to 1 for now to simplify iteration
 	#header address with (column("header"))
 	#-c for categorical
 	#insert periods for nulls
+
+
 	DATA=$(mktemp --suffix=.asv)
 	trap "rm -f $DATA" EXIT
 	echo 'a b c\n10 2 3\n20 4 9\n30 16 27' > $DATA
-	gnuplot -p -e "set style data linespoints; set key autotitle columnheader; plot for [i=$((DOMAIN+1)):*] \"$DATA\" using ${DOMAIN+1:}i"
+	gnuplot -p -e "set style data linespoints; set key autotitle columnheader; plot for [i=$((${#DOMAIN}+${#CATEGORICAL}+1)):*] \"$DATA\" using ${DOMAIN:+1:}i${CATEGORICAL:+:xtic($((${#DOMAIN}+1)))}"
 	
 	;;
     
@@ -164,12 +186,7 @@ case "$CMD" in
 	[[ $# -ne 0 ]] && echoheader "$@"
 	tr '\n\t' "$RS$FS"
 	;;
-
-    --help|-h|help) #[SUBCOMMAND]; Prints help text for SUBCOMMAND. If SUBCOMMAND omitted, prints list of subcommands.
-	    [[ $# -eq 0 ]] && echo 'asv - ASCII-Separated Values\nTabular text data manipulation using ASCII control characters as table structure. \nUsage: asv SUBCOMMAND [ARGUMENTS...]\n\nSubcommands:'
-	    grep -E -- "${1:-\\w+}\)\s#" "$0" | sed -E -- "s/^[[:space:]]*([-|[:alnum:]]+)\)\s#([^;]*); (.*)/\1 \2\t\3/" | sed $((${+1}+1))',$ s/^[[:space:]]*/\t/'
-	    [[ $# -ne 0 ]] && sed -nE "/\s*$1\)\s#/,/^\s*;;\s*$/ s/.*opts\[([-[:alnum:]]+)\].*#(.*); (.*)/\t\1 \2\t\3/p" "$0" 
-	    ;;
+    
     *)
 	if [[ -z "$CMD" ]]; then
 	    "$0" help
