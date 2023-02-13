@@ -89,7 +89,9 @@ case "$CMD" in
 	<"${1:-/dev/fd/0}" "$0" asv2tsv | less -S
 	;;
 
-    plot) #[ASV]; Plots the data using the first column as the domain and subsequent columns as the range of multiple lines.
+    plot) #[ASV]...; Plots the data with gnuplot.
+	zparseopts -A opts -E -D d
+	local DOMAIN=${+opts[-d]} #; Turns off type checking
 	#set style data linespoints
 	#set key autotitle columnheader
 	#-d[column] uses this column as domain. default to 1 for now to simplify iteration
@@ -98,8 +100,8 @@ case "$CMD" in
 	#insert periods for nulls
 	DATA=$(mktemp --suffix=.asv)
 	trap "rm -f $DATA" EXIT
-	echo 'a b c\n1 1 8\n2 2 29\n3 3 11' > $DATA
-	gnuplot -p -e 'set style data linespoints; set key autotitle columnheader; plot for [i=1:*] "'"$DATA"'" using i'
+	echo 'a b c\n10 2 3\n20 4 9\n30 16 27' > $DATA
+	gnuplot -p -e "set style data linespoints; set key autotitle columnheader; plot for [i=$((DOMAIN+1)):*] \"$DATA\" using ${DOMAIN+1:}i"
 	
 	;;
     
