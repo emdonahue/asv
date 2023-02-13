@@ -39,6 +39,6 @@ Subcommands:
 	tokenize TOKENS [TOKENS...]	Converts each whitespace-separated TOKENS file into a token table and concatenates them all.
 	tsv2asv [HEADER...]	Converts TSV on stdin into an asv table using HEADERS as the columns. If no HEADERS are supplied, the first row of TSV is used as the header.
 ```
-##TODO
+## TODO
 - Add -f field selection to update
 - Normalize all commands to take stdin or else manually parse flags for unix tools and pass them through to allow for uniform syntax
