@@ -15,18 +15,23 @@ Usage: asv SUBCOMMAND [ARGUMENTS...]
 
 Subcommands:
 	asv2tsv [ASV]	Converts ASV into a tsv.
+	awk [OPTION]...	Runs awk on the rows of the asv on stdin.
 	check [ASV]	Checks the integrity of the ASV in terms of column count and datatype consistency and presence of nulls.
 	count FIELD[,FIELD]... [ASV]	Aggregates and counts the rows grouped by FIELD ids.
-	cut [OPTION]... [ASV]	Performs unix cut on the asv.
+	cut [OPTION]...	Acts like unix cut on the asv using field names or ids.
 	head N [ASV]	Prints the first N rows.
 	header HEADER...	Sets the headers for the asv supplied on stdin to the list of HEADERS.
-	group FIELD[,FIELD]... [ASV]	Creates an autoid column at position 1 by concatenating and sorting values from the comma-separated list of field numbers. Useful for aggregate functions and multi-column joins.
+	group FIELD[,FIELD]... [ASV]	Creates an grouped column at position 1 by concatenating and sorting values from the comma-separated list of fields. The fields are then removed from the table until it is unjoined. Useful for aggregate functions and multi-column joins.
 	join [OPTION]... FILE1 FILE2	Runs unix join on the two files.
+	less [ASV]	Lightly formats the table and pipes it to less for inspection.
+	plot 	Plots the data using the first column as the domain and subsequent columns as the range of multiple lines.
+	project [OPTIONS]... FIELD[,FIELD]...	Similar to cut, but limited to comma syntax and allows column rearrangement and column names in addition to indices.
 	rows COMMAND	Prints the header of the asv on stdin then executes an arbitrary unix COMMAND with the rows on stdin.
 	schema ASV	Prints the table headers along with their indices for use in other commands.
 	select [OPTION]... REGEX [ASV]	Selects rows in which a value matches REGEX.
 	size ASV	Counts the rows in ASV.
 	sort [OPTION]...	Runs unix sort on just the rows of the asv supplied on stdin.
+	ungroup [ASV]	Ungroups the group column and restores the multiple columns from which it was computed. Use after multi-column joins or aggregates to restore a complete table.
 	uniq [OPTION]... [ASV]	Performs unix uniq on the asv on stdin.
 	update PATTERN REPLACEMENT [ASV]	Replaces regex PATTERN with REPLACEMENT, which may use back references.
 	tail N [ASV]	Prints the last N rows.
