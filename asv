@@ -10,6 +10,7 @@ set -o pipefail
 if [[ "${TRACE-0}" == "1" ]]; then set -o xtrace; fi
 
 export LC_COLLATE=C #Selects the locale for determining sort order of dimensions.
+unset c #Reserved variable for inline comments
 
 local SOH=$'\001'
 local STX=$'\002'
@@ -77,7 +78,7 @@ case "$CMD" in
 
     --help|-h|help) #[SUBCOMMAND]; Prints help text for SUBCOMMAND. If SUBCOMMAND omitted, prints list of subcommands.
 	[[ $# -eq 0 ]] && echo 'asv - ASCII-Separated Values\nTabular text data manipulation using ASCII control characters as table structure. \nUsage: asv SUBCOMMAND [ARGUMENTS...]\n\nSubcommands:'
-	    sed -nE '/\s*'"$1"'\)\s#/'"${1:+,/^\s*;;\s*$/}"'{s/^[[:space:]]*([-|[:alnum:]]+)\)\s#([^;]*); (.*)/'"${${1-\t}:#$1}"'\1 \2\t\3/p; s/.*(\w+)=\w+ \$\{c#(.*); (.*)\}.*/\t-\1 \2\t\3/p}' "$0"
+	    sed -nE '/\s*'"$1"'\)\s#/'"${1:+,/^\s*;;\s*$/}"'{s/^[[:space:]]*([-|[:alnum:]]+)\)\s#([^;]*); (.*)/'"${${1-\t}:#$1}"'\1 \2\t\3/p; s/.*(\w+)[-+:]*=\w+ \$\{c#(.*); (.*)\}.*/\t-\1 \2\t\3/p}' "$0"
 	;;
 
     group) #FIELD[,FIELD]... [ASV]; Creates an grouped column at position 1 by concatenating and sorting values from the comma-separated list of fields. The fields are then removed from the table until it is unjoined. Useful for aggregate functions and multi-column joins.
@@ -130,11 +131,10 @@ case "$CMD" in
 	;;
 
     select) #[OPTION]... REGEX [ASV]; Selects rows in which a value matches REGEX.
-	zparseopts -A opts -E -D i v f:
-	local IGNORECASE=${+opts[-i]} #; Ignores case
-	local FIELD="${opts[-f]:-0}" #FIELD; Match only in field number FIELD.
-	local INVERTMATCH=${+opts[-v]} #; Inverts match
-	< "${2:-/dev/fd/0}" rowawk -vR="$1" -vI="$IGNORECASE" -vF="$FIELD" -vV="$INVERTMATCH" 'BEGIN {IGNORECASE=I}  {for (i=1;i<=NF;i++) {if (F && F!=i) continue; if (match($i,R)) {if (V) next; print; next}}; if (V) print}'
+	      zparseopts -F -D i=IGNORECASE ${c#; ; Ignores case}\
+			 f:=FIELD ${c#; FIELD; Match only in field number FIELD}\
+			 v=INVERT ${c#; Inverts match}
+	< "${2:-/dev/fd/0}" rowawk -vR="$1" -vI="${#IGNORECASE}" -vF="${FIELD[2]}" -vV="${#INVERT}" 'BEGIN {IGNORECASE=I}  {for (i=1;i<=NF;i++) {if (F && F!=i) continue; if (match($i,R)) {if (V) next; print; next}}; if (V) print}'
 	;;
 
     size) #ASV; Counts the rows in ASV.
@@ -154,7 +154,7 @@ case "$CMD" in
 	;;
     
     update) #PATTERN REPLACEMENT [ASV]; Replaces regex PATTERN with REPLACEMENT, which may use back references.
-	< "${3:-/dev/fd/0}" rowawk -vR="$1" -vs="${2//\\/\\\\}" '{for (i=1;i<=NF;i++) $i=gensub(R,s,"g",$i); print}'
+	< "${3:-/dev/fd/0}" rowawk -vR="$1" -vs="${(q)2}" '{for (i=1;i<=NF;i++) $i=gensub(R,s,"g",$i); print}'
 	;;
 
     tail) #N [ASV]; Prints the last N rows.
@@ -162,12 +162,10 @@ case "$CMD" in
 	;;
     
     tokenize) #TOKENS [TOKENS...]; Converts each whitespace-separated TOKENS file into a token table and concatenates them all.
-	zparseopts -A opts -E -D l
-	local FNAMES=${+opts[-l]} #; Adds column representing filename in which token was found.
-
-	[[ "$FNAMES" -eq 1 ]] && echo -n "filename$FS"
+	zparseopts -F -D l=FNAMES ${c#; Adds column representing filename in which token was found}
+	echo -n ${FNAMES[1]:+"filename$FS"}
 	echo -n "token$RS"
-	awk -vFNAMES="$FNAMES" -v'RS=[[:space:][:cntrl:]]+' -v"OFS=$FS" -v"ORS=$RS" '$0!="" {printf("%s%s"ORS, FNAMES ? FILENAME OFS : "", $0)}' "$@"
+	awk -vFNAMES="${#FNAMES}" -v'RS=[[:space:][:cntrl:]]+' -v"OFS=$FS" -v"ORS=$RS" '$0!="" {printf("%s%s"ORS, FNAMES ? FILENAME OFS : "", $0)}' "$@"
 	;;
 
     tsv2asv) #[HEADER...]; Converts TSV on stdin into an asv table using HEADERS as the columns. If no HEADERS are supplied, the first row of TSV is used as the header.
