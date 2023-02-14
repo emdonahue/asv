@@ -43,6 +43,10 @@ assert 'header' "$($ASV header < <(echo -n $TABLE) x y)" "$(echo -n $THEAD2$TBOD
 
 assert 'join' "$($ASV join <(echo -n $TABLE) <(echo -n $THEAD2$TBODY))" "$(echo "a${FS}b${FS}y${RS}c${FS}d${FS}d${RS}e${FS}f${FS}f${RS}")"
 
+if [[ "${+PLOT}" -eq 1 ]]; then
+    "$ASV" plot -s 'set title "noflags"' <(echo -n "2^3${FS}3^4${RS}2${FS}3${RS}4${FS}9${RS}8${FS}27${RS}${FS}81${RS}") <(echo -n "43${RS}10${RS}16${RS}64${RS}")
+fi
+
 assert 'project' "$($ASV project 1 < <(echo -n $TABLE))" "$(echo -n "a${RS}c${RS}e${RS}")"
 assert 'project names' "$($ASV project a < <(echo -n $TABLE))" "$(echo -n "a${RS}c${RS}e${RS}")"
 assert 'project multiple' "$($ASV project b,a < <(echo -n $TABLE))" "$(echo -n "b${FS}a${RS}d${FS}c${RS}f${FS}e${RS}")"

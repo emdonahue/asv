@@ -4,6 +4,7 @@
 #TODO Convert flags to new help format
 #TODO Add -f field selection to update
 #TODO Normalize all commands to take stdin or else manually parse flags for unix tools and pass them through to allow for uniform syntax
+#TODO Insert column name parsing into all commands where it makes sense
 
 set -o errexit
 set -o pipefail
@@ -94,26 +95,25 @@ case "$CMD" in
 	;;
 
     plot) #[ASV]...; Plots the data with gnuplot.
-	zparseopts -F -D c=CATEGORICAL ${c#; Uses column 1 as the x domain instead of the row number.}\
-		   d=DOMAIN ${c#; Uses column 1 as the x domain instead of the row number.}
+	zparseopts -F -D c=CATEGORICAL ${c#; Uses column 1 as the x domain instead of the row number}\
+		   d=DOMAIN ${c#; Uses column 1 as the x domain instead of the row number}\
+		   s:=SETTINGS ${c#SET; Inserts block of semicolon-separated SET statements into the gnuplot program. Input is pasted verbatim into the preamble of the gnuplot program, so "set" must be written out.}
 		   
-	#local CATEGORICAL=${opts2[-c]} #; Uses column 1 (or 2 if -d is enabled) as categorical labels on the x axis.
-	#local DOMAIN=${opts2[-d]} #; Uses column 1 as the x domain instead of the row number.
-	#echo "DOMAIN: ${#DOMAIN} ${DOMAIN:+1:}"
-	#echo "CATEGORICAL: ${#CATEGORICAL} ${CATEGORICAL:+1:}"
-
 	#set style data linespoints
 	#set key autotitle columnheader
-	#-d[column] uses this column as domain. default to 1 for now to simplify iteration
+	#-d[column\"$DATA\" using ${#DOMAIN}:i${CATEGORICAL:+:xtic($((${#DOMAIN}+1)))}] uses this column as domain. default to 1 for now to simplify iteration
 	#header address with (column("header"))
-	#-c for categorical
-	#insert periods for nulls
+	#plot for [d=0:*] for [i=1:*] "/tmp/gp.dat" index d using i title columnheader with linespoints
 
-
-	DATA=$(mktemp --suffix=.asv)
+	local DATA=$(mktemp --suffix=.asv)
 	trap "rm -f $DATA" EXIT
-	echo 'a b c\n10 2 3\n20 4 9\n30 16 27' > $DATA
-	gnuplot -p -e "set style data linespoints; set key autotitle columnheader; plot for [i=$((${#DOMAIN}+${#CATEGORICAL}+1)):*] \"$DATA\" using ${DOMAIN:+1:}i${CATEGORICAL:+:xtic($((${#DOMAIN}+1)))}"
+	local GPLOT=$(awk -vRS="$RS" -vFS="$FS" -vDATA="$DATA" -vDOMAIN=${#DOMAIN} -vCATEGORICAL=${#CATEGORICAL} -vgp="\"$DATA\" index %s using %s:%s%s" 'BEGINFILE {print "\n" > DATA} {$1=$1} 1==FNR {for (i=1;i<=NF;i++) printf("\"%s\"%s",$i,i==NF?ORS:OFS) > DATA; for (i=1+DOMAIN+CATEGORICAL;i<=NF;i++) printf("%s"gp,2+DOMAIN+CATEGORICAL==NR+i?"":",",ARGIND-1,DOMAIN,i,CATEGORICAL?":xtic("(DOMAIN+1)")":"")} 1<FNR {for (i=1;i<=NF;i++) $i=$i?$i:"."; print > DATA}' "$@")
+	#${CATEGORICAL:+:xtic($((${#DOMAIN}+1)))}
+	cat $DATA
+	echo "plot "$GPLOT
+	#gnuplot -p -e "set style data linespoints; set key autotitle columnheader; ${SETTINGS[2]}; plot for [i=$((${#DOMAIN}+${#CATEGORICAL}+1)):*] \"$DATA\" using ${#DOMAIN}:i${CATEGORICAL:+:xtic($((${#DOMAIN}+1)))}"
+	#gnuplot -p -e "set style data linespoints; set key autotitle columnheader; ${SETTINGS[2]}; plot for [i=$((${#DOMAIN}+${#CATEGORICAL}+1)):*] \"$DATA\" using ${#DOMAIN}:i${CATEGORICAL:+:xtic($((${#DOMAIN}+1)))}"
+	gnuplot -p -e "set style data linespoints; set key autotitle columnheader; ${SETTINGS[2]}; plot $GPLOT"
 	
 	;;
     
