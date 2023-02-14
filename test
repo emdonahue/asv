@@ -44,7 +44,10 @@ assert 'header' "$($ASV header < <(echo -n $TABLE) x y)" "$(echo -n $THEAD2$TBOD
 assert 'join' "$($ASV join <(echo -n $TABLE) <(echo -n $THEAD2$TBODY))" "$(echo "a${FS}b${FS}y${RS}c${FS}d${FS}d${RS}e${FS}f${FS}f${RS}")"
 
 if [[ "${+PLOT}" -eq 1 ]]; then
-    "$ASV" plot -s 'set title "noflags"' <(echo -n "2^3${FS}3^4${RS}2${FS}3${RS}4${FS}9${RS}8${FS}27${RS}${FS}81${RS}") <(echo -n "43${RS}10${RS}16${RS}64${RS}")
+    "$ASV" plot -s 'set title "noflags"' <(echo -n "x${FS}2x${RS}1${FS}2${RS}2${FS}4${RS}3${FS}6${RS}${FS}8${RS}") <(echo -n "3x${RS}3${RS}6${RS}9${RS}")
+    "$ASV" plot -ds 'set title "domain"' <(echo -n "x${FS}y=x${RS}2${FS}2${RS}4${FS}4${RS}6${FS}6${RS}8${FS}8${RS}")
+    "$ASV" plot -cs 'set title "categorical"' <(echo -n "x${FS}y=x${RS}one${FS}1${RS}two${FS}2${RS}three${FS}3${RS}")
+    "$ASV" plot -dcs 'set title "categorical domain"' <(echo -n "x${FS}category${FS}y=x${RS}2${FS}two${FS}2${RS}4${FS}four${FS}4${RS}6${FS}six${FS}6${RS}")
 fi
 
 assert 'project' "$($ASV project 1 < <(echo -n $TABLE))" "$(echo -n "a${RS}c${RS}e${RS}")"
