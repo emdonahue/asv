@@ -61,7 +61,8 @@ case "$CMD" in
 	;;
 
     count) #[ASV]; Aggregates and counts unique rows. Equivalent to uniq -c but formatted as an asv.
-	echo -n "counts$FS"
+	zparseopts -F -D f:=FIELDNAME ${c#; Field name for the counts column}
+	echo -n "${FIELDNAME[2]:-count}$FS"
 	"$0" uniq -c | sed -zE -- '2,$ s/\s*([[:digit:]]+) /\1'"$FS"'/'
 	;;
     
@@ -119,8 +120,8 @@ case "$CMD" in
 	;;
 
     select) #[OPTION]... REGEX [ASV]; Selects rows in which a value matches REGEX.
-	      zparseopts -F -D i=IGNORECASE ${c#; ; Ignores case}\
-			 f:=FIELD ${c#; FIELD; Match only in field number FIELD}\
+	      zparseopts -F -D i=IGNORECASE ${c#; Ignores case}\
+			 f:=FIELD ${c# FIELD; Match only in field number FIELD}\
 			 v=INVERT ${c#; Inverts match}
 	< "${2:-/dev/fd/0}" rowawk -vR="$1" -vI="${#IGNORECASE}" -vF="${FIELD[2]}" -vV="${#INVERT}" 'BEGIN {IGNORECASE=I}  {for (i=1;i<=NF;i++) {if (F && F!=i) continue; if (match($i,R)) {if (V) next; print; next}}; if (V) print}'
 	;;
