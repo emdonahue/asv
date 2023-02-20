@@ -60,8 +60,9 @@ case "$CMD" in
 	awk -v"T=${#TYPE}" -v"FS=$FS" -v"RS=$RS" 'NR==1 {split($0,names,FS); N=NF} 1<NR {if (N!=NF) {print "Row " (NR-1) " - Fields: " NF ", Expected: " N; e=1}; for (i=0;i<=NF;i++) {if ($i=="") {printf("Row %d Column %d (%s) is null\n",NR-1,i,names[i])} else {if (types[i]) {if (types[i]!=typeof($i) && !T) printf("Row %d Column %d (%s) - Type: %s, Expected: %s\n",NR-1,i,names[i],typeof($i),types[i])} else types[i]=typeof($i)}}} END {exit e}' "${1:--}" 1>&2
 	;;
 
-    count) #[ASV]; Aggregates and counts the rows with the same id in the first column.
-	"$0" cut -f1 | "$0" sort -k1,1 | "$0" uniq -c | asvawk -vFS='[[:space:]]+' '1==NR {print $1,"count"} 1<NR {print $3,$2}'
+    count) #[ASV]; Aggregates and counts unique rows. Equivalent to uniq -c but formatted as an asv.
+	echo -n "counts$FS"
+	"$0" uniq -c | sed -zE -- '2,$ s/\s*([[:digit:]]+) /\1'"$FS"'/'
 	;;
     
     cut) #[OPTION]...; Acts like unix cut on the asv using field names or ids.

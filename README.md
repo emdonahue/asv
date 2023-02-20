@@ -17,7 +17,7 @@ Subcommands:
 	asv2tsv [ASV]	Converts ASV into a tsv.
 	awk [OPTION]...	Runs awk on the rows of the asv on stdin.
 	check [ASV]	Checks the integrity of the ASV in terms of column count and datatype consistency and presence of nulls.
-	count FIELD[,FIELD]... [ASV]	Aggregates and counts the rows grouped by FIELD ids.
+	count [ASV]	Aggregates and counts unique rows. Equivalent to uniq -c but formatted as an asv.
 	cut [OPTION]...	Acts like unix cut on the asv using field names or ids.
 	head N [ASV]	Prints the first N rows.
 	header HEADER...	Sets the headers for the asv supplied on stdin to the list of HEADERS.

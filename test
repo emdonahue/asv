@@ -31,7 +31,7 @@ assert 'check no type' "$($ASV check -t <(echo -n ${THEAD}c${RS}1${FS}f$RS) 2>&1
 
 assert 'size' "$($ASV size < <(echo -n $TABLE))" "2"
 
-assert 'count' "$($ASV count < <(echo -n $TABLE$TROW1))" "$(echo -n "a${FS}count${RS}c${FS}2${RS}e${FS}1${RS}")"
+assert 'count' "$($ASV count < <(echo -n $THEAD$TROW1$TROW1$TROW2))" "$(echo -n "counts${FS}a${FS}b${RS}2${FS}c${FS}d${RS}1${FS}e${FS}f${RS}")"
 
 assert 'cut' "$($ASV cut -f1 < <(echo -n $TABLE))" "$(echo -n "a${RS}c${RS}e${RS}")"
 
