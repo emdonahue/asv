@@ -40,5 +40,8 @@ Subcommands:
 	tsv2asv [HEADER...]	Converts TSV on stdin into an asv table using HEADERS as the columns. If no HEADERS are supplied, the first row of TSV is used as the header.
 ```
 ## TODO
+- Throw error on invalid flags
+- Convert flags to new help format
 - Add -f field selection to update
 - Normalize all commands to take stdin or else manually parse flags for unix tools and pass them through to allow for uniform syntax
+- Insert column name parsing into all commands where it makes sense
