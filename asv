@@ -101,7 +101,7 @@ case "$CMD" in
 		   s:=SETTINGS ${c#SET; Inserts block of semicolon-separated SET statements into the gnuplot program. Input is pasted verbatim into the preamble of the gnuplot program, so "set" must be written out.}		   
 	local DATA=$(mktemp --suffix=.asv)
 	trap "rm -f $DATA" EXIT
-	local GPLOT=$(awk -vRS="$RS" -vFS="$FS" -vDATA="$DATA" -vDOMAIN=${#DOMAIN} -vCATEGORICAL=${#CATEGORICAL} -vgp="\"$DATA\" index %s using %s:%s%s" 'BEGINFILE {print "\n" > DATA} {$1=$1} 1==FNR {for (i=1;i<=NF;i++) printf("\"%s\"%s",$i,i==NF?ORS:OFS) > DATA; for (i=1+DOMAIN+CATEGORICAL;i<=NF;i++) printf("%s"gp,2+DOMAIN+CATEGORICAL==NR+i?"":",",ARGIND-1,DOMAIN,i,CATEGORICAL?":xtic("(DOMAIN+1)")":"")} 1<FNR {for (i=1;i<=NF;i++) $i=$i?$i:"."; print > DATA}' "$@")
+	local GPLOT=$(awk -vRS="$RS" -vFS="$FS" -vDATA="$DATA" -vDOMAIN=${#DOMAIN} -vCATEGORICAL=${#CATEGORICAL} -vgp="\"$DATA\" index %s using %s:%s%s" 'BEGINFILE {print "\n" > DATA} {$1=$1} 1==FNR {for (i=1;i<=NF;i++) printf("\"%s\"%s",$i,i==NF?ORS:OFS) > DATA; for (i=1+DOMAIN+CATEGORICAL;i<=NF;i++) printf("%s"gp,2+DOMAIN+CATEGORICAL==NR+i?"":",",ARGIND?ARGIND-1:0,DOMAIN,i,CATEGORICAL?":xtic("(DOMAIN+1)")":"")} 1<FNR {for (i=1;i<=NF;i++) $i=$i?$i:"."; print > DATA}' "$@")
 	gnuplot -p -e "set style data linespoints; set key autotitle columnheader; ${SETTINGS[2]}; plot $GPLOT"	
 	;;
     
