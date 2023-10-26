@@ -173,7 +173,7 @@ case "$CMD" in
 
     tree2asv) #PARENT-REGEX PARENT-HEADER CHILD-HEADER [TREE]; Converts tree formatted file with regex-distinguishable parent lines followed by child lines into an ASV.
 	echo -n "$2$FS$3$RS"
-	awk -vOFS="$FS" -vORS="$RS" '/'"$1"'/ {header=$0; next} {print header,$0}' "${4:--}"
+	awk -vOFS="$FS" -vORS="$RS" "$1"' {header=$0; next} {print header,$0}' "${4:--}"
 	;;
     
     tsv2asv) #[HEADER...]; Converts TSV on stdin into an asv table using HEADERS as the columns. If no HEADERS are supplied, the first row of TSV is used as the header.
