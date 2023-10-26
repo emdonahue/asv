@@ -5,6 +5,7 @@
 #TODO Add -f field selection to update
 #TODO Normalize all commands to take stdin or else manually parse flags for unix tools and pass them through to allow for uniform syntax
 #TODO Insert column name parsing into all commands where it makes sense
+#TODO Let negative column indices count back from last column
 
 set -o errexit
 set -o pipefail
@@ -16,7 +17,6 @@ unset c #Reserved variable for inline comments
 local SOH=$'\001'
 local STX=$'\002'
 local GS=$'\035'
-local RS='\0'
 local FS=$'\036'
 local US=$'\037'
 
@@ -43,9 +43,20 @@ writeheader() {
     echo -n "$*$RS"
 }
 
+zparseopts -D -K -A GLOBALS R: ${c#; Sets the record separator}
+
+
+local RS=${GLOBALS[-R]:-'\0'}
+
+
 CMD="$1"
 [[ $# -ne 0 ]] && shift
 case "$CMD" in
+    --help|-h|help) #[SUBCOMMAND]; Prints help text for SUBCOMMAND. If SUBCOMMAND omitted, prints list of subcommands.
+	[[ $# -eq 0 ]] && echo 'asv - ASCII-Separated Values\nTabular text data manipulation using ASCII control characters as table structure. \nUsage: asv SUBCOMMAND [ARGUMENTS...]\n\nSubcommands:'
+	sed -nE '/\s*'"$1"'\)\s#/'"${1:+,/^\s*;;\s*$/}"'{s/^[[:space:]]*([-|[:alnum:]]+)\)\s#([^;]*); (.*)/'"${${1-\t}:#$1}"'\1 \2\t\3/p; s/.*(\w+)[-+:]*=\w+ \$\{c#(.*); (.*)\}.*/\t-\1 \2\t\3/p}' "$0"
+	;;
+    
     asv2tsv) #[ASV]; Converts ASV into a tsv.
 	< "${1:-/dev/fd/0}" tr "$RS$FS" '\n\t'
 	;;
@@ -60,7 +71,7 @@ case "$CMD" in
 	awk -v"T=${#TYPE}" -v"FS=$FS" -v"RS=$RS" 'NR==1 {split($0,names,FS); N=NF} 1<NR {if (N!=NF) {print "Row " (NR-1) " - Fields: " NF ", Expected: " N; e=1}; for (i=0;i<=NF;i++) {if ($i=="") {printf("Row %d Column %d (%s) is null\n",NR-1,i,names[i])} else {if (types[i]) {if (types[i]!=typeof($i) && !T) printf("Row %d Column %d (%s) - Type: %s, Expected: %s\n",NR-1,i,names[i],typeof($i),types[i])} else types[i]=typeof($i)}}} END {exit e}' "${1:--}" 1>&2
 	;;
 
-    count) #[ASV]; Aggregates and counts unique rows. Equivalent to uniq -c but formatted as an asv.
+    count) #[ASV]; Aggregates and counts unique rows. Assumes sorted input. Equivalent to uniq -c but formatted as an asv.
 	zparseopts -F -D f:=FIELDNAME ${c#; Field name for the counts column}
 	echo -n "${FIELDNAME[2]:-count}$FS"
 	"$0" uniq -c | sed -zE -- '2,$ s/\s*([[:digit:]]+) /\1'"$FS"'/'
@@ -77,12 +88,7 @@ case "$CMD" in
     header) #HEADER...; Sets the headers for the asv supplied on stdin to the list of HEADERS.
 	writeheader "$@"
 	tail -z -n+2
-	;;
-
-    --help|-h|help) #[SUBCOMMAND]; Prints help text for SUBCOMMAND. If SUBCOMMAND omitted, prints list of subcommands.
-	[[ $# -eq 0 ]] && echo 'asv - ASCII-Separated Values\nTabular text data manipulation using ASCII control characters as table structure. \nUsage: asv SUBCOMMAND [ARGUMENTS...]\n\nSubcommands:'
-	    sed -nE '/\s*'"$1"'\)\s#/'"${1:+,/^\s*;;\s*$/}"'{s/^[[:space:]]*([-|[:alnum:]]+)\)\s#([^;]*); (.*)/'"${${1-\t}:#$1}"'\1 \2\t\3/p; s/.*(\w+)[-+:]*=\w+ \$\{c#(.*); (.*)\}.*/\t-\1 \2\t\3/p}' "$0"
-	;;
+	;;    
 
     group) #FIELD[,FIELD]... [ASV]; Creates an grouped column at position 1 by concatenating and sorting values from the comma-separated list of fields. The fields are then removed from the table until it is unjoined. Useful for aggregate functions and multi-column joins.
 	< "${2:-/dev/fd/0}" asvawk '{$(NF+1)=$'"${1//,/\"\035\"$}"'; print}' | "$0" project -v "$1" | asvawk '{for (i=NF;1<=i;i--) {$(i+1)=$i}; $1=$NF; NF--; print}' | "$0" sort -k1,1
@@ -151,7 +157,7 @@ case "$CMD" in
 	;;
     
     tokenize) #TOKENS [TOKENS...]; Converts each whitespace-separated TOKENS file into a token table and concatenates them all.
-	zparseopts -F -D l=FNAMES ${c#; Adds column representing filename in which token was found}
+	zparseopts -D H=FNAMES ${c#; Adds column representing filename in which token was found}
 	echo -n ${FNAMES[1]:+"filename$FS"}
 	echo -n "token$RS"
 	awk -vFNAMES="${#FNAMES}" -v'RS=[[:space:][:cntrl:]]+' -v"OFS=$FS" -v"ORS=$RS" '$1 {printf("%s%s"ORS, FNAMES ? FILENAME OFS : "", $0)}' "$@"
@@ -163,11 +169,7 @@ case "$CMD" in
 	;;
     
     *)
-	if [[ -z "$CMD" ]]; then
-	    "$0" help
-	else
-	    "$0" help 1>&2
-	    exit 1
-	fi
+	"$0" help 1>&2
+	exit 1
 	;;
 esac

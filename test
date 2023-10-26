@@ -78,10 +78,12 @@ assert 'tail' "$($ASV tail 1 <(echo -n $TABLE))" "$(echo -n "${THEAD}e${FS}f${RS
 
 echo 'a b\nc d' > "$TMP"
 assert 'tokenize' "$($ASV tokenize $TMP)" "$(echo -n "token${RS}a${RS}b${RS}c${RS}d${RS}")"
-assert 'tokenize filenames' "$($ASV tokenize -l $TMP)" "$(echo -n "filename${FS}token${RS}$TMP${FS}a${RS}$TMP${FS}b${RS}$TMP${FS}c${RS}$TMP${FS}d${RS}")"
+assert 'tokenize filenames' "$($ASV tokenize -H $TMP)" "$(echo -n "filename${FS}token${RS}$TMP${FS}a${RS}$TMP${FS}b${RS}$TMP${FS}c${RS}$TMP${FS}d${RS}")"
 
 assert 'tsv2asv' "$($ASV tsv2asv < <(echo "a\tb\nc\td\ne\tf"))" "$(echo -n "$TABLE")"
 assert 'tsv2asv with headers' "$($ASV tsv2asv < <(echo "c\td\ne\tf") a b)" "$(echo -n "$TABLE")"
+
+assert 'custom RS' "$($ASV -R'\n' size <(echo "a\tb\nc\td\ne\tf"))" '2'
 
 [[ -z "$ERR" ]] && echo "All Tests Pass"
 exit "$ERR"
