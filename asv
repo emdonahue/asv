@@ -18,19 +18,18 @@ local SOH=$'\001'
 local STX=$'\002'
 local GS=$'\035'
 local US=$'\037'
-
-zparseopts -D -K -A GLOBALS F: ${c#; Sets the field separator. Default: \036}\
-	   R: ${c#; Sets the record separator. If anything other than newline or null, some subcommands may not work properly. Default: \0}	   
-local RS=${GLOBALS[-R]:-'\0'}
-local FS=${GLOBALS[-F]:-$'\036'}
-[[ "$RS" = '\0' ]] && local Z=-z
+local RS='\0'
 
 asvawk() { #Accepts program as last argument and input file on stdin
     awk -v"OFS=$FS" -v"ORS=$RS" -v"FS=$FS" -v"RS=$RS" -f <(echo '1==NR {for (i=1;i<=NF;i++) { COLS[i]=i; COLS[$i]=i}}') -f <(echo "${${@}[-1]}") "${${@}[@]:0:-1}"
 }
 
 readheader() {
-    read -rd$'\0' line
+    if [[ $RS = '\0' ]]; then
+	read -rd$'\0' line
+    else
+	read -rd$RS line
+    fi
     echo -n "$line$RS"
 }
 
@@ -47,6 +46,12 @@ writeheader() {
     local IFS="$FS"
     echo -n "$*$RS"
 }
+
+zparseopts -D -A GLOBALS F: ${c#; Sets the field separator. Default: \036}\
+	   R: ${c#; Sets the record separator. If anything other than newline or null, some subcommands may not work properly. Default: \0}	   
+RS=${GLOBALS[-R]:-'\0'}
+local FS=${GLOBALS[-F]:-$'\036'}
+[[ "$RS" = '\0' ]] && local Z=-z
 
 CMD="$1"
 [[ $# -ne 0 ]] && shift
