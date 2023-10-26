@@ -80,6 +80,8 @@ echo 'a b\nc d' > "$TMP"
 assert 'tokenize' "$($ASV tokenize $TMP)" "$(echo -n "token${RS}a${RS}b${RS}c${RS}d${RS}")"
 assert 'tokenize filenames' "$($ASV tokenize -H $TMP)" "$(echo -n "filename${FS}token${RS}$TMP${FS}a${RS}$TMP${FS}b${RS}$TMP${FS}c${RS}$TMP${FS}d${RS}")"
 
+assert 'tree2asv' "$($ASV tree2asv '^-' group item < <(echo "-a\nb\n-c\nd\ne"))" "$(echo -n "group${FS}item${RS}-a${FS}b${RS}-c${FS}d${RS}-c${FS}e${RS}")" 
+
 assert 'tsv2asv' "$($ASV tsv2asv < <(echo "a\tb\nc\td\ne\tf"))" "$(echo -n "$TABLE")"
 assert 'tsv2asv with headers' "$($ASV tsv2asv < <(echo "c\td\ne\tf") a b)" "$(echo -n "$TABLE")"
 
