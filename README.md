@@ -13,15 +13,19 @@ asv - ASCII-Separated Values
 Tabular text data manipulation using ASCII control characters as table structure. 
 Usage: asv SUBCOMMAND [ARGUMENTS...]
 
+Global Options:
+	-F	Sets the field separator. Default: \036
+	-R	Sets the record separator. If anything other than newline or null, some subcommands may not work properly. Default: \0
+
 Subcommands:
+	--help|-h|help [SUBCOMMAND]	Prints help text for SUBCOMMAND. If SUBCOMMAND omitted, prints list of subcommands.
 	asv2tsv [ASV]	Converts ASV into a tsv.
 	awk [OPTION]...	Runs awk on the rows of the asv on stdin.
 	check [ASV]	Checks the integrity of the ASV in terms of column count and datatype consistency and presence of nulls.
-	count [ASV]	Aggregates and counts unique rows. Equivalent to uniq -c but formatted as an asv.
+	count [ASV]	Aggregates and counts unique rows. Assumes sorted input. Equivalent to uniq -c but formatted as an asv.
 	cut [OPTION]...	Acts like unix cut on the asv using field names or ids.
 	head N [ASV]	Prints the first N rows.
 	header HEADER...	Sets the headers for the asv supplied on stdin to the list of HEADERS.
-	--help|-h|help [SUBCOMMAND]	Prints help text for SUBCOMMAND. If SUBCOMMAND omitted, prints list of subcommands.
 	group FIELD[,FIELD]... [ASV]	Creates an grouped column at position 1 by concatenating and sorting values from the comma-separated list of fields. The fields are then removed from the table until it is unjoined. Useful for aggregate functions and multi-column joins.
 	join [OPTION]... FILE1 FILE2	Runs unix join on the two files.
 	less [ASV]	Lightly formats the table and pipes it to less for inspection.
@@ -45,3 +49,4 @@ Subcommands:
 - Add -f field selection to update
 - Normalize all commands to take stdin or else manually parse flags for unix tools and pass them through to allow for uniform syntax
 - Insert column name parsing into all commands where it makes sense
+- Let negative column indices count back from last column

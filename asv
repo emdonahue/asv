@@ -17,7 +17,6 @@ unset c #Reserved variable for inline comments
 local SOH=$'\001'
 local STX=$'\002'
 local GS=$'\035'
-local FS=$'\036'
 local US=$'\037'
 
 asvawk() { #Accepts program as last argument and input file on stdin
@@ -43,17 +42,21 @@ writeheader() {
     echo -n "$*$RS"
 }
 
-zparseopts -D -K -A GLOBALS R: ${c#; Sets the record separator}
-
-
+zparseopts -D -K -A GLOBALS F: ${c#; Sets the field separator. Default: \036}\
+	   R: ${c#; Sets the record separator. If anything other than newline or null, some subcommands may not work properly. Default: \0}	   
 local RS=${GLOBALS[-R]:-'\0'}
-
+local FS=${GLOBALS[-F]:-$'\036'}
+[[ "$RS" = '\0' ]] && local Z=-z
 
 CMD="$1"
 [[ $# -ne 0 ]] && shift
 case "$CMD" in
     --help|-h|help) #[SUBCOMMAND]; Prints help text for SUBCOMMAND. If SUBCOMMAND omitted, prints list of subcommands.
-	[[ $# -eq 0 ]] && echo 'asv - ASCII-Separated Values\nTabular text data manipulation using ASCII control characters as table structure. \nUsage: asv SUBCOMMAND [ARGUMENTS...]\n\nSubcommands:'
+	if [[ $# -eq 0 ]]; then
+	    echo 'asv - ASCII-Separated Values\nTabular text data manipulation using ASCII control characters as table structure. \nUsage: asv SUBCOMMAND [ARGUMENTS...]\n\nGlobal Options:'
+	    sed -nE 's/.*(.): [$][{]c#; ([^}]+).*/\t-\1\t\2/p' "$0"
+	    echo '\nSubcommands:'
+	fi
 	sed -nE '/\s*'"$1"'\)\s#/'"${1:+,/^\s*;;\s*$/}"'{s/^[[:space:]]*([-|[:alnum:]]+)\)\s#([^;]*); (.*)/'"${${1-\t}:#$1}"'\1 \2\t\3/p; s/.*(\w+)[-+:]*=\w+ \$\{c#(.*); (.*)\}.*/\t-\1 \2\t\3/p}' "$0"
 	;;
     
@@ -74,20 +77,20 @@ case "$CMD" in
     count) #[ASV]; Aggregates and counts unique rows. Assumes sorted input. Equivalent to uniq -c but formatted as an asv.
 	zparseopts -F -D f:=FIELDNAME ${c#; Field name for the counts column}
 	echo -n "${FIELDNAME[2]:-count}$FS"
-	"$0" uniq -c | sed -zE -- '2,$ s/\s*([[:digit:]]+) /\1'"$FS"'/'
+	"$0" uniq -c | sed $Z -E -- '2,$ s/\s*([[:digit:]]+) /\1'"$FS"'/'
 	;;
     
     cut) #[OPTION]...; Acts like unix cut on the asv using field names or ids.
-	cut -zd"$FS" "$@"
+	cut $Z -d"$FS" "$@"
 	;;
 
     head) #N [ASV]; Prints the first N rows.
-	< "${2:-/dev/fd/0}" rows head -zn"$1"
+	< "${2:-/dev/fd/0}" rows head $Z -n"$1"
 	;;
     
     header) #HEADER...; Sets the headers for the asv supplied on stdin to the list of HEADERS.
 	writeheader "$@"
-	tail -z -n+2
+	tail $Z -n+2
 	;;    
 
     group) #FIELD[,FIELD]... [ASV]; Creates an grouped column at position 1 by concatenating and sorting values from the comma-separated list of fields. The fields are then removed from the table until it is unjoined. Useful for aggregate functions and multi-column joins.
@@ -95,7 +98,7 @@ case "$CMD" in
 	;;
     
     join) #[OPTION]... FILE1 FILE2; Runs unix join on the two files.
-	join -zt"$FS" --header "$@"
+	join $Z -t"$FS" --header "$@"
 	;;
 
     less) #[ASV]; Lightly formats the table and pipes it to less for inspection.
@@ -105,7 +108,7 @@ case "$CMD" in
     plot) #[ASV]...; Plots the data with gnuplot.
 	zparseopts -F -D c=CATEGORICAL ${c#; Uses column 1 as the x domain instead of the row number}\
 		   d=DOMAIN ${c#; Uses column 1 as the x domain instead of the row number}\
-		   s:=SETTINGS ${c#SET; Inserts block of semicolon-separated SET statements into the gnuplot program. Input is pasted verbatim into the preamble of the gnuplot program, so "set" must be written out.}		   
+		   s:=SETTINGS ${c#SET; Inserts block of semicolon-separated SET statements into the gnuplot program. Input is pasted verbatim into the preamble of the gnuplot program, so "set" must be written out}		   
 	local DATA=$(mktemp --suffix=.asv)
 	trap "rm -f $DATA" EXIT
 	local GPLOT=$(awk -vRS="$RS" -vFS="$FS" -vDATA="$DATA" -vDOMAIN=${#DOMAIN} -vCATEGORICAL=${#CATEGORICAL} -vgp="\"$DATA\" index %s using %s:%s%s" 'BEGINFILE {print "\n" > DATA} {$1=$1} 1==FNR {for (i=1;i<=NF;i++) printf("\"%s\"%s",$i,i==NF?ORS:OFS) > DATA; for (i=1+DOMAIN+CATEGORICAL;i<=NF;i++) printf("%s"gp,2+DOMAIN+CATEGORICAL==NR+i?"":",",ARGIND?ARGIND-1:0,DOMAIN,i,CATEGORICAL?":xtic("(DOMAIN+1)")":"")} 1<FNR {for (i=1;i<=NF;i++) $i=$i?$i:"."; print > DATA}' "$@")
@@ -113,7 +116,7 @@ case "$CMD" in
 	;;
     
     project) #[OPTIONS]... FIELD[,FIELD]...; Similar to cut, but limited to comma syntax and allows column rearrangement and column names in addition to indices.
-	zparseopts -F -D v=INVERT ${c#; Inverts projection. Equivalent to unix cut --complement.}
+	zparseopts -F -D v=INVERT ${c#; Inverts projection. Equivalent to unix cut --complement}
 	asvawk -vFIELDS="$1" -vV="${#INVERT}" '1==NR {split(FIELDS,FIDS,","); for (i in FIDS) {FIDS[i]=COLS[FIDS[i]]}; if (V) {for (i in FIDS) {inv[FIDS[i]]=FIDS[i]}; delete FIDS; for (i=1;i<=NF;i++) {if (!(i in inv)) {FIDS[length(FIDS)+1]=i}}}} {for (i in FIDS) {printf("%s%s",$(FIDS[i]),i==length(FIDS)?RS:FS)}}'
 	;;
 	
@@ -137,7 +140,7 @@ case "$CMD" in
 	;;
     
     sort) #[OPTION]...; Runs unix sort on just the rows of the asv supplied on stdin.
-	rows sort -zt"$FS" "$@"
+	rows sort $Z -t"$FS" "$@"
 	;;
 
     ungroup) #[ASV]; Ungroups the group column and restores the multiple columns from which it was computed. Use after multi-column joins or aggregates to restore a complete table.
@@ -145,7 +148,7 @@ case "$CMD" in
 	;;
     
     uniq) #[OPTION]... [ASV]; Performs unix uniq on the asv on stdin.
-	rows uniq -z "$@"
+	rows uniq $Z "$@"
 	;;
     
     update) #PATTERN REPLACEMENT [ASV]; Replaces regex PATTERN with REPLACEMENT, which may use back references.
@@ -153,7 +156,7 @@ case "$CMD" in
 	;;
 
     tail) #N [ASV]; Prints the last N rows.
-	< "${2:-/dev/fd/0}" rows tail -zn"$1"
+	< "${2:-/dev/fd/0}" rows tail $Z -n"$1"
 	;;
     
     tokenize) #TOKENS [TOKENS...]; Converts each whitespace-separated TOKENS file into a token table and concatenates them all.

@@ -84,6 +84,7 @@ assert 'tsv2asv' "$($ASV tsv2asv < <(echo "a\tb\nc\td\ne\tf"))" "$(echo -n "$TAB
 assert 'tsv2asv with headers' "$($ASV tsv2asv < <(echo "c\td\ne\tf") a b)" "$(echo -n "$TABLE")"
 
 assert 'custom RS' "$($ASV -R'\n' size <(echo "a\tb\nc\td\ne\tf"))" '2'
+assert 'custom FS' "$($ASV -F$'\t' -R$'\n' cut -f1 <(echo "a\tb\nc\td\ne\tf"))" "$(echo -n "a\nc\ne")"
 
 [[ -z "$ERR" ]] && echo "All Tests Pass"
 exit "$ERR"
