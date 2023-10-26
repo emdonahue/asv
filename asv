@@ -171,7 +171,7 @@ case "$CMD" in
 	awk -vFNAMES="${#FNAMES}" -v'RS=[[:space:][:cntrl:]]+' -v"OFS=$FS" -v"ORS=$RS" '$1 {printf("%s%s"ORS, FNAMES ? FILENAME OFS : "", $0)}' "$@"
 	;;
 
-    tree2asv) #PARENT-REGEX PARENT-HEADER CHILD-HEADER [TREE]; Converts tree formatted file with regex-distinguishable parent lines followed by child lines into an ASV.
+    tree2asv) #AWK-PARENT-REGEX PARENT-HEADER CHILD-HEADER [TREE]; Converts tree formatted file with regex-distinguishable parent lines followed by child lines into an ASV.
 	echo -n "$2$FS$3$RS"
 	awk -vOFS="$FS" -vORS="$RS" "$1"' {header=$0; next} {print header,$0}' "${4:--}"
 	;;
