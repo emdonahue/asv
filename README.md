@@ -41,6 +41,7 @@ Subcommands:
 	update PATTERN REPLACEMENT [ASV]	Replaces regex PATTERN with REPLACEMENT, which may use back references.
 	tail N [ASV]	Prints the last N rows.
 	tokenize TOKENS [TOKENS...]	Converts each whitespace-separated TOKENS file into a token table and concatenates them all.
+	tree2asv PARENT-REGEX PARENT-HEADER CHILD-HEADER [TREE]	Converts tree formatted file with regex-distinguishable parent lines followed by child lines into an ASV.
 	tsv2asv [HEADER...]	Converts TSV on stdin into an asv table using HEADERS as the columns. If no HEADERS are supplied, the first row of TSV is used as the header.
 ```
 ## TODO
