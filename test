@@ -83,6 +83,7 @@ assert 'tokenize filenames' "$($ASV tokenize -H $TMP)" "$(echo -n "filename${FS}
 assert 'tree2asv' "$($ASV tree2asv '/^-/' group item < <(echo "-a\nb\n-c\nd\ne"))" "$(echo -n "group${FS}item${RS}-a${FS}b${RS}-c${FS}d${RS}-c${FS}e${RS}")" 
 
 assert 'tsv2asv' "$($ASV tsv2asv < <(echo "a\tb\nc\td\ne\tf"))" "$(echo -n "$TABLE")"
+assert 'tsv2asv rs/fs' "$($ASV tsv2asv -fy -rz < <(echo -n "aybzcydzeyfz"))" "$(echo -n "$TABLE")"
 assert 'tsv2asv with headers' "$($ASV tsv2asv < <(echo "c\td\ne\tf") a b)" "$(echo -n "$TABLE")"
 
 assert 'custom RS' "$($ASV -R'\n' size <(echo "a\tb\nc\td\ne\tf"))" '2'

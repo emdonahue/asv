@@ -183,8 +183,10 @@ case "$CMD" in
 	;;
     
     tsv2asv) #[HEADER...]; Converts TSV on stdin into an asv table using HEADERS as the columns. If no HEADERS are supplied, the first row of TSV is used as the header.
+	zparseopts -F -D f:=FIELDSEPARATOR ${c# FIELDSEPARATOR; Field separator to use in parsing input tsv.}\
+			 r:=RECORDSEPARATOR ${c#; RECORDSEPARATOR; Record separator to use in parsing input tsv.}
 	[[ $# -ne 0 ]] && writeheader "$@"
-	tr '\n\t' "$RS$FS"
+	tr "${RECORDSEPARATOR[2]:-\n}${FIELDSEPARATOR[2]:-\t}" "$RS$FS"
 	;;
     
     *)
