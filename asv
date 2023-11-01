@@ -19,6 +19,12 @@ local STX=$'\002'
 local GS=$'\035'
 local US=$'\037'
 local RS='\0'
+local SELF="$0"
+
+
+self() { #Recursively calls script
+    "$SELF" -F"$FS" -R"$RS" "$@"
+}
 
 asvawk() { #Accepts program as last argument and input file on stdin
     awk -v"OFS=$FS" -v"ORS=$RS" -v"FS=$FS" -v"RS=$RS" -f <(echo '1==NR {for (i=1;i<=NF;i++) { COLS[i]=i; COLS[$i]=i}}') -f <(echo "${${@}[-1]}") "${${@}[@]:0:-1}"
@@ -62,7 +68,7 @@ case "$CMD" in
 	    sed -nE 's/.*(.): [$][{]c#; ([^}]+).*/\t-\1\t\2/p' "$0"
 	    echo '\nSubcommands:'
 	fi
-	sed -nE '/\s*'"$1"'\)\s#/'"${1:+,/^\s*;;\s*$/}"'{s/^[[:space:]]*([-|[:alnum:]]+)\)\s#([^;]*); (.*)/'"${${1-\t}:#$1}"'\1 \2\t\3/p; s/.*(\w+)[-+:]*=\w+ \$\{c#(.*); (.*)\}.*/\t-\1 \2\t\3/p}' "$0"
+	sed -nE '/\s+'"$1"'\)\s#/'"${1:+,/^\s*;;\s*$/}"'{s/^[[:space:]]*([-|[:alnum:]]+)\)\s#([^;]*); (.*)/'"${${1-\t}:#$1}"'\1 \2\t\3/p; s/.*(\w+)[-+:]*=\w+ \$\{c#(.*); (.*)\}.*/\t-\1 \2\t\3/p}' "$0"
 	;;
     
     asv2tsv) #[ASV]; Converts ASV into a tsv.
@@ -81,8 +87,8 @@ case "$CMD" in
 
     count) #[ASV]; Aggregates and counts unique rows. Assumes sorted input. Equivalent to uniq -c but formatted as an asv.
 	zparseopts -F -D f:=FIELDNAME ${c#; Field name for the counts column}
-	echo -n "${FIELDNAME[2]:-count}$FS"
-	"$0" uniq -c "${1:--}" | sed $Z -E -- '2,$ s/\s*([[:digit:]]+) /\1'"$FS"'/'
+	echo -n "${FIELDNAME[2]:-count}$FS"	
+	self uniq $Z -c "${1:--}" | sed $Z -E -- '2,$ s/\s*([[:digit:]]+) /\1'"$FS"'/'
 	;;
     
     cut) #[OPTION]...; Acts like unix cut on the asv using field names or ids.
@@ -99,7 +105,7 @@ case "$CMD" in
 	;;    
 
     group) #FIELD[,FIELD]... [ASV]; Creates an grouped column at position 1 by concatenating and sorting values from the comma-separated list of fields. The fields are then removed from the table until it is unjoined. Useful for aggregate functions and multi-column joins.
-	< "${2:-/dev/fd/0}" asvawk '{$(NF+1)=$'"${1//,/\"\035\"$}"'; print}' | "$0" project -v "$1" | asvawk '{for (i=NF;1<=i;i--) {$(i+1)=$i}; $1=$NF; NF--; print}' | "$0" sort -k1,1
+	< "${2:-/dev/fd/0}" asvawk '{$(NF+1)=$'"${1//,/\"\035\"$}"'; print}' | self project -v "$1" | asvawk '{for (i=NF;1<=i;i--) {$(i+1)=$i}; $1=$NF; NF--; print}' | self sort -k1,1
 	;;
     
     join) #[OPTION]... FILE1 FILE2; Runs unix join on the two files.
@@ -107,7 +113,7 @@ case "$CMD" in
 	;;
 
     less) #[ASV]; Lightly formats the table and pipes it to less for inspection.
-	<"${1:-/dev/fd/0}" "$0" asv2tsv | less -S
+	<"${1:-/dev/fd/0}" self asv2tsv | less -S
 	;;
 
     plot) #[ASV]...; Plots the data with gnuplot.
@@ -130,7 +136,7 @@ case "$CMD" in
 	;;
 
     schema) #ASV; Prints the table headers along with their indices for use in other commands.
-	{echo -n "id${FS}column$RS"; asvawk '{for (i=1;i<=NF;i++) print i,$i; exit}' < "${1:-/dev/fd/0}"} | "$0" asv2tsv
+	{echo -n "id${FS}column$RS"; asvawk '{for (i=1;i<=NF;i++) print i,$i; exit}' < "${1:-/dev/fd/0}"} | self asv2tsv
 	;;
 
     select) #[OPTION]... REGEX [ASV]; Selects rows in which a value matches REGEX.
