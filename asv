@@ -70,6 +70,10 @@ case "$CMD" in
 	fi
 	sed -nE '/'"${1:+\s$1}"'\)\s#/'"${1:+,/^\s*;;\s*$/}"'{s/^[[:space:]]*([-|[:alnum:]]+)\)\s#([^;]*); (.*)/'"${${1-\t}:#$1}"'\1 \2\t\3/p; s/.*(\w+)[-+:]*=\w+ \$\{c#(.*); (.*)\}.*/\t-\1 \2\t\3/p}' "$0"
 	;;
+
+    asv2files) #FILENAME CONTENTS [ASV]; Dumps index CONTENTS column to files named by index FILENAME (numeric indices only).
+        < "${3:-/dev/fd/0}" awk -v"FS=$FS" -v"RS=$RS" -vFN="$1" -vCONTENTS="$2" '1<NR {print $CONTENTS > $FN}'
+        ;;
     
     asv2tsv) #[ASV]; Converts ASV into a tsv.
 	< "${1:-/dev/fd/0}" tr "$RS$FS" '\n\t'
@@ -126,9 +130,9 @@ case "$CMD" in
 	gnuplot -p -e "set style data linespoints; set key autotitle columnheader; ${SETTINGS[2]}; plot $GPLOT"	
 	;;
     
-    project) #[OPTIONS]... FIELD[,FIELD]...; Similar to cut, but limited to comma syntax and allows column rearrangement and column names in addition to indices.
+    project) #[OPTIONS]... FIELD[,FIELD]... [ASV]; Similar to cut, but limited to comma syntax and allows column rearrangement and column names in addition to indices.
 	zparseopts -F -D v=INVERT ${c#; Inverts projection. Equivalent to unix cut --complement}
-	asvawk -vFIELDS="$1" -vV="${#INVERT}" '1==NR {split(FIELDS,FIDS,","); for (i in FIDS) {FIDS[i]=COLS[FIDS[i]]}; if (V) {for (i in FIDS) {inv[FIDS[i]]=FIDS[i]}; delete FIDS; for (i=1;i<=NF;i++) {if (!(i in inv)) {FIDS[length(FIDS)+1]=i}}}} {for (i in FIDS) {printf("%s%s",$(FIDS[i]),i==length(FIDS)?RS:FS)}}'
+	asvawk -vFIELDS="$1" -vV="${#INVERT}" '1==NR {split(FIELDS,FIDS,","); for (i in FIDS) {FIDS[i]=COLS[FIDS[i]]}; if (V) {for (i in FIDS) {inv[FIDS[i]]=FIDS[i]}; delete FIDS; for (i=1;i<=NF;i++) {if (!(i in inv)) {FIDS[length(FIDS)+1]=i}}}} {for (i in FIDS) {printf("%s%s",$(FIDS[i]),i==length(FIDS)?RS:FS)}}' < "${2:-/dev/stdin}"
 	;;
 	
     rows) #COMMAND; Prints the header of the asv on stdin then executes an arbitrary unix COMMAND with the rows on stdin.

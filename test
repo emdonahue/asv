@@ -7,7 +7,7 @@ assert() {
        fi
 }
 
-local ASV='./asv'
+local ASV=$(realpath './asv')
 local FS=$'\034'
 local GS=$'\035'
 local RS=$'\0'
@@ -16,6 +16,9 @@ local US=$'\037'
 
 TMP=$(mktemp)
 trap "rm $TMP" EXIT
+TMPDIR=$(mktemp -d)
+trap "rmdir $TMPDIR" EXIT
+cd "$TMPDIR"
 
 THEAD="a${FS}b${RS}"
 THEAD2="x${FS}y${RS}"
@@ -88,6 +91,11 @@ assert 'tsv2asv with headers' "$($ASV tsv2asv < <(echo "c\td\ne\tf") a b)" "$(ec
 
 assert 'custom RS' "$($ASV -R'\n' size <(echo "a\tb\nc\td\ne\tf"))" '2'
 assert 'custom FS' "$($ASV -F$'\t' -R$'\n' cut -f1 <(echo "a\tb\nc\td\ne\tf"))" "$(echo -n "a\nc\ne")"
+
+$ASV asv2files 1 2 < <(echo -n $TABLE)
+assert 'asv2files' "$(cat $TMPDIR/c)" "d"
+assert 'asv2files' "$(cat $TMPDIR/e)" "f"
+rm "$TMPDIR/c" "$TMPDIR/e"
 
 [[ -z "$ERR" ]] && echo "All Tests Pass"
 exit "$ERR"
