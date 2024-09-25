@@ -11,8 +11,7 @@ local ASV=$(realpath './asv')
 local FS=$'\034'
 local GS=$'\035'
 local RS=$'\0'
-local FS=$'\036'
-local US=$'\037'
+local FS=$'\037'
 
 TMP=$(mktemp)
 trap "rm $TMP" EXIT

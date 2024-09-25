@@ -17,7 +17,6 @@ unset c #Reserved variable for inline comments
 local SOH=$'\001'
 local STX=$'\002'
 local GS=$'\035'
-local US=$'\037'
 local RS='\0'
 local SELF="$0"
 
@@ -56,7 +55,7 @@ writeheader() {
 zparseopts -D -A GLOBALS F: ${c#; Sets the field separator. Default: \036}\
 	   R: ${c#; Sets the record separator. If anything other than newline or null, some subcommands may not work properly. Default: \0}	   
 RS=${GLOBALS[-R]:-'\0'}
-local FS=${GLOBALS[-F]:-$'\036'}
+local FS=${GLOBALS[-F]:-$'\037'}
 [[ "$RS" = '\0' ]] && local Z=-z
 
 CMD="$1"
